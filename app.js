@@ -262,7 +262,7 @@ function renderSideBySideCategoryTables(result) {
     if (playerNames.length === 0) {
       rowsHtml = `
         <tr>
-          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
+          <td colspan="3" style="text-align: center; color: var(--text-dim); padding: 20px;">
             ${categoryItems.length === 0 ? 'ไม่มีไอเทมในสต็อก' : 'ไม่มีผู้ลงชื่อคิวในหมวดนี้'}
           </td>
         </tr>
@@ -277,7 +277,6 @@ function renderSideBySideCategoryTables(result) {
 
           rowsHtml += `
             <tr class="${rowBgClass} ${isGroupStart}">
-              <td style="text-align: center;"><span class="cat-num-badge">${rowCounter}</span></td>
               <td>
                 <div class="cat-player-name">
                   <span>${escapeHtml(pName)}</span>
@@ -309,7 +308,6 @@ function renderSideBySideCategoryTables(result) {
       <table class="cat-table">
         <thead>
           <tr>
-            <th style="width: 40px; text-align: center;">#</th>
             <th>ชื่อผู้เล่น</th>
             <th style="width: 95px;">หน้าที่</th>
             <th style="width: 95px;">ช่องที่</th>
@@ -343,46 +341,99 @@ function renderSideBySideCategoryTables(result) {
 }
 
 // Screenshot / Capture Functions
-function captureCategoryTable(key, categoryName) {
+async function captureCategoryTable(key, categoryName) {
   const tableBox = document.querySelector(`.category-table-box[data-key="${key}"]`);
   if (!tableBox) return;
-
-  showToast(`📸 กำลังแคปรูปตาราง ${categoryName}...`);
 
   if (typeof html2canvas === 'undefined') {
     alert('ระบบสร้างภาพยังไม่พร้อมใช้งาน กรุณารอเบราว์เซอร์โหลดสักครู่ครับ');
     return;
   }
 
-  html2canvas(tableBox, {
-    backgroundColor: '#0f1626',
-    scale: 2,
-    useCORS: true
-  }).then(canvas => {
-    canvas.toBlob(blob => {
-      // 1. Trigger Download
-      const link = document.createElement('a');
-      link.download = `ตารางประมูล_${categoryName.replace(/\s+/g, '_')}.png`;
-      link.href = URL.createObjectURL(blob);
-      link.click();
+  const tbody = tableBox.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  if (rows.length === 0) return;
 
-      // 2. Try Copying to Clipboard
-      if (navigator.clipboard && window.ClipboardItem) {
-        navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]).then(() => {
-          showToast(`📸 แคปรูปตาราง ${categoryName} เรียบร้อย! (ก๊อปใส่อัลบั้มแล้ว กด Ctrl+V ใน Discord ได้เลย)`);
-        }).catch(() => {
-          showToast(`📸 ดาวน์โหลดรูปตาราง ${categoryName} เรียบร้อยแล้ว!`);
-        });
-      } else {
-        showToast(`📸 ดาวน์โหลดรูปตาราง ${categoryName} เรียบร้อยแล้ว!`);
+  const MAX_ROWS_PER_IMAGE = 30;
+  const totalParts = Math.ceil(rows.length / MAX_ROWS_PER_IMAGE);
+
+  if (totalParts > 1) {
+    showToast(`📸 แบ่งแคปรูปตาราง ${categoryName} เป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
+  } else {
+    showToast(`📸 กำลังแคปรูปตาราง ${categoryName}...`);
+  }
+
+  for (let part = 0; part < totalParts; part++) {
+    const startIdx = part * MAX_ROWS_PER_IMAGE;
+    const endIdx = Math.min((part + 1) * MAX_ROWS_PER_IMAGE, rows.length);
+    const chunkRows = rows.slice(startIdx, endIdx);
+
+    // Clone container element for capturing
+    const cloneBox = tableBox.cloneNode(true);
+
+    // Remove action buttons in header clone
+    const actions = cloneBox.querySelector('.cat-header-actions');
+    if (actions) actions.remove();
+
+    // Add part indicator if split into multiple files
+    if (totalParts > 1) {
+      const titleDiv = cloneBox.querySelector('.cat-header-title');
+      if (titleDiv) {
+        const partTag = document.createElement('span');
+        partTag.className = 'badge badge-warning';
+        partTag.style.marginLeft = '8px';
+        partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts}: แถว ${startIdx + 1}-${endIdx})`;
+        titleDiv.appendChild(partTag);
       }
-    });
-  }).catch(err => {
-    console.error(err);
-    alert('เกิดข้อผิดพลาดในการสร้างภาพ');
-  });
+    }
+
+    // Replace tbody with slice of rows
+    const cloneTbody = cloneBox.querySelector('tbody');
+    cloneTbody.innerHTML = '';
+    chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
+
+    // Position off-screen for clean rendering
+    cloneBox.style.position = 'fixed';
+    cloneBox.style.left = '-9999px';
+    cloneBox.style.top = '0';
+    cloneBox.style.width = tableBox.offsetWidth + 'px';
+    document.body.appendChild(cloneBox);
+
+    try {
+      const canvas = await html2canvas(cloneBox, {
+        backgroundColor: '#0f1626',
+        scale: 2,
+        useCORS: true
+      });
+
+      await new Promise((resolve) => {
+        canvas.toBlob(blob => {
+          const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
+          const fileName = `ตารางประมูล_${categoryName.replace(/\s+/g, '_')}${suffix}.png`;
+          
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+
+          if (part === 0 && navigator.clipboard && window.ClipboardItem) {
+            navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]).catch(() => {});
+          }
+
+          setTimeout(resolve, 400);
+        });
+      });
+    } catch (err) {
+      console.error('Capture error:', err);
+    } finally {
+      document.body.removeChild(cloneBox);
+    }
+  }
+
+  showToast(`📸 แคปรูปตาราง ${categoryName} เรียบร้อย! (${totalParts} ไฟล์)`);
 }
 
 // Export formatted text to Discord/Line
