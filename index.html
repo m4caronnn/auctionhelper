@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RO Origin Classic - ระบบจัดคิวและคำนวณหน้าประมูลกิลด์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- html2canvas library for auto screenshot feature -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon">⚔️</div>
+        <div>
+          <h1>RO Origin Classic - Auction Helper</h1>
+          <p class="subtitle">ระบบจัดคิว</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnDemo" class="btn btn-secondary">⚡ โหลดข้อมูลตัวอย่าง</button>
+        <button id="btnReset" class="btn btn-danger-outline">🗑️ ล้างทั้งหมด</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Section 1: Stock Inventory Input -->
+      <section class="card-panel">
+        <div class="panel-header">
+          <h2><span class="step-num">1</span> จำนวนไอเทมประมูลทั้งหมดวันนี้ (Inventory Stock)</h2>
+          
+        </div>
+        <div class="stock-grid">
+          <div class="stock-item album">
+            <div class="stock-icon">📘</div>
+            <div class="stock-info">
+              <label for="stockAlbum">สมุดการ์ดบอส</label>
+              <span class="quota-tag">โควต้า: 1 เล่ม / คน</span>
+            </div>
+            <input type="number" id="stockAlbum" min="0" value="0" placeholder="0">
+          </div>
+
+          <div class="stock-item shard">
+            <div class="stock-icon">🧩</div>
+            <div class="stock-info">
+              <label for="stockShard">เศษการ์ดบอส</label>
+              <span class="quota-tag">โควต้า: 1 ชิ้น / คน</span>
+            </div>
+            <input type="number" id="stockShard" min="0" value="0" placeholder="0">
+          </div>
+
+          <div class="stock-item white-feather">
+            <div class="stock-icon">🪶</div>
+            <div class="stock-info">
+              <label for="stockWhiteFeather">ขนนกขาว</label>
+              <span class="quota-tag">โควต้า: 3 ชิ้น / คน</span>
+            </div>
+            <input type="number" id="stockWhiteFeather" min="0" value="0" placeholder="0">
+          </div>
+
+          <div class="stock-item black-feather">
+            <div class="stock-icon">🪶</div>
+            <div class="stock-info">
+              <label for="stockBlackFeather">ขนนกดำแดง</label>
+              <span class="quota-tag">โควต้า: 5 ชิ้น / คน</span>
+            </div>
+            <input type="number" id="stockBlackFeather" min="0" value="0" placeholder="0">
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Player Input Lists -->
+      <section class="card-panel">
+        <div class="panel-header">
+          <h2><span class="step-num">2</span> รายชื่อคนประมูล (วาง 1 ชื่อ ต่อ 1 บรรทัด)</h2>
+          <span class="badge badge-warning">ระบบล็อคโควต้าให้อัตโนมัติ</span>
+        </div>
+        <div class="input-lists-grid">
+          <!-- Album List -->
+          <div class="input-group album">
+            <div class="input-header">
+              <span class="icon">📘</span>
+              <h3>ชุดสมุดการ์ดบอส</h3>
+              <span class="list-count" id="countAlbum">0 คน</span>
+            </div>
+            <textarea id="listAlbum" placeholder="วางรายชื่อผู้ประมูลสมุดการ์ดบอส...&#10;นาย A&#10;นาย B" rows="5"></textarea>
+            <div class="input-footer">ได้รับอัตโนมัติคนละ 1 เล่ม</div>
+          </div>
+
+          <!-- Shard List -->
+          <div class="input-group shard">
+            <div class="input-header">
+              <span class="icon">🧩</span>
+              <h3>ชุดเศษการ์ดบอส</h3>
+              <span class="list-count" id="countShard">0 คน</span>
+            </div>
+            <textarea id="listShard" placeholder="วางรายชื่อผู้ประมูลเศษการ์ดบอส...&#10;นาย C&#10;นาย D" rows="5"></textarea>
+            <div class="input-footer">ได้รับอัตโนมัติคนละ 1 ชิ้น</div>
+          </div>
+
+          <!-- White Feather List -->
+          <div class="input-group white-feather">
+            <div class="input-header">
+              <span class="icon">🪶</span>
+              <h3>ชุดขนนกขาว</h3>
+              <span class="list-count" id="countWhiteFeather">0 คน</span>
+            </div>
+            <textarea id="listWhiteFeather" placeholder="วางรายชื่อผู้ประมูลขนนกขาว...&#10;นาย E&#10;นาย F" rows="5"></textarea>
+            <div class="input-footer">ได้รับอัตโนมัติคนละ 3 ชิ้น</div>
+          </div>
+
+          <!-- Black Feather List -->
+          <div class="input-group black-feather">
+            <div class="input-header">
+              <span class="icon">🪶</span>
+              <h3>ชุดขนนกดำแดง</h3>
+              <span class="list-count" id="countBlackFeather">0 คน</span>
+            </div>
+            <textarea id="listBlackFeather" placeholder="วางรายชื่อผู้ประมูลขนนกดำแดง...&#10;นาย G&#10;นาย H" rows="5"></textarea>
+            <div class="input-footer">ได้รับอัตโนมัติคนละ 5 ชิ้น</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Calculations & Results -->
+      <section class="card-panel results-panel">
+        <div class="panel-header">
+          <h2>📊 ตารางสรุปคิวแยกหมวดไอเทม (Side-by-Side Screenshot)</h2>
+          <div class="search-box">
+            <input type="text" id="searchMember" placeholder="🔍 ค้นหาชื่อสมาชิก...">
+          </div>
+        </div>
+
+        <div class="table-view-header">
+          <span class="table-caption">📸 กดปุ่ม [📸 แคปรูปตาราง] ในแต่ละตารางเพื่อเซฟรูป PNG ส่ง Discord/Line ได้ทันที!</span>
+        </div>
+        <div id="personalSummaryList" class="category-tables-grid">
+          <!-- Dynamic side-by-side minimal category tables injected by JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">คัดลอกข้อความสรุปคิวเรียบร้อยแล้ว! 📋</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+// RO Origin Classic - Auction Helper Application Logic
+
+const QUOTAS = {
+  album: 1,
+  shard: 1,
+  whiteFeather: 3,
+  blackFeather: 5
+};
+
+const ITEM_TYPES = [
+  { key: 'album', name: 'สมุดการ์ดบอส', icon: '📘', color: '#fbbf24' },
+  { key: 'shard', name: 'เศษการ์ดบอส', icon: '🧩', color: '#3b82f6' },
+  { key: 'whiteFeather', name: 'ขนนกขาว', icon: '🪶', color: '#10b981' },
+  { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '🪶', color: '#a855f7' }
+];
+
+// State
+let appData = {
+  stocks: { album: 0, shard: 0, whiteFeather: 0, blackFeather: 0 },
+  lists: {
+    album: [],
+    shard: [],
+    whiteFeather: [],
+    blackFeather: []
+  },
+  searchTerm: ''
+};
+
+// DOM Elements
+const stockInputs = {
+  album: document.getElementById('stockAlbum'),
+  shard: document.getElementById('stockShard'),
+  whiteFeather: document.getElementById('stockWhiteFeather'),
+  blackFeather: document.getElementById('stockBlackFeather')
+};
+
+const listInputs = {
+  album: document.getElementById('listAlbum'),
+  shard: document.getElementById('listShard'),
+  whiteFeather: document.getElementById('listWhiteFeather'),
+  blackFeather: document.getElementById('listBlackFeather')
+};
+
+const countBadges = {
+  album: document.getElementById('countAlbum'),
+  shard: document.getElementById('countShard'),
+  whiteFeather: document.getElementById('countWhiteFeather'),
+  blackFeather: document.getElementById('countBlackFeather')
+};
+
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+  initEventListeners();
+  loadStateFromUI();
+  calculateAndRender();
+});
+
+function initEventListeners() {
+  // Stock Inputs Listener
+  Object.keys(stockInputs).forEach(key => {
+    stockInputs[key].addEventListener('input', () => {
+      appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
+      calculateAndRender();
+    });
+  });
+
+  // Name Lists Listener
+  Object.keys(listInputs).forEach(key => {
+    listInputs[key].addEventListener('input', () => {
+      updateListCounts();
+      calculateAndRender();
+    });
+  });
+
+  // Search Listener
+  document.getElementById('searchMember').addEventListener('input', (e) => {
+    appData.searchTerm = e.target.value.trim().toLowerCase();
+    calculateAndRender();
+  });
+
+  // Action Buttons
+  document.getElementById('btnDemo').addEventListener('click', loadDemoData);
+  document.getElementById('btnReset').addEventListener('click', resetAll);
+  document.getElementById('btnCopyGuild').addEventListener('click', copyGuildText);
+}
+
+function parseNames(text) {
+  if (!text) return [];
+  return text
+    .split('\n')
+    .map(name => name.trim())
+    .filter(name => name.length > 0);
+}
+
+function updateListCounts() {
+  Object.keys(listInputs).forEach(key => {
+    const names = parseNames(listInputs[key].value);
+    countBadges[key].textContent = `${names.length} คน`;
+    appData.lists[key] = names;
+  });
+}
+
+function loadStateFromUI() {
+  Object.keys(stockInputs).forEach(key => {
+    appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
+  });
+  updateListCounts();
+}
+
+function loadDemoData() {
+  stockInputs.album.value = 2;
+  stockInputs.shard.value = 3;
+  stockInputs.whiteFeather.value = 12;
+  stockInputs.blackFeather.value = 15;
+
+  listInputs.album.value = 'กิลด์มาสเตอร์\nรองหัวหน้ากิลด์';
+  listInputs.shard.value = 'สายแทงค์1\nสายดาเมจ1\nสายฮีล1';
+  listInputs.whiteFeather.value = 'สายแทงค์1\nสายดาเมจ1\nสายดาเมจ2\nสายฮีล1';
+  listInputs.blackFeather.value = 'กิลด์มาสเตอร์\nสายซัพพอร์ต1\nสายดาเมจ3';
+
+  loadStateFromUI();
+  calculateAndRender();
+  showToast('⚡ โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว');
+}
+
+function resetAll() {
+  if (!confirm('คุณต้องการล้างข้อมูลทั้งหมดใช่หรือไม่?')) return;
+
+  Object.keys(stockInputs).forEach(key => stockInputs[key].value = 0);
+  Object.keys(listInputs).forEach(key => listInputs[key].value = '');
+
+  loadStateFromUI();
+  calculateAndRender();
+  showToast('🗑️ ล้างข้อมูลเรียบร้อยแล้ว');
+}
+
+// Core Engine Calculation
+function calculateEngine() {
+  const allItems = [];
+  let globalIndex = 0;
+
+  // 1. Build consecutive items array
+  ITEM_TYPES.forEach(typeObj => {
+    const count = appData.stocks[typeObj.key] || 0;
+    for (let i = 0; i < count; i++) {
+      const page = Math.floor(globalIndex / 4) + 1;
+      const slot = (globalIndex % 4) + 1;
+      allItems.push({
+        globalIndex,
+        itemType: typeObj.key,
+        itemName: typeObj.name,
+        itemIcon: typeObj.icon,
+        color: typeObj.color,
+        page,
+        slot,
+        assignedTo: null
+      });
+      globalIndex++;
+    }
+  });
+
+  const totalPages = Math.ceil(allItems.length / 4) || 0;
+
+  // 2. Allocate to players per category with AUTO MAX quota
+  const warnings = [];
+  const playerAssignmentsMap = {}; // { playerName: [ { item, page, slot } ] }
+
+  ITEM_TYPES.forEach(typeObj => {
+    const key = typeObj.key;
+    const maxQuota = QUOTAS[key];
+    const playerList = appData.lists[key] || [];
+
+    // Find available item slots of this type
+    const availableItemsOfCategory = allItems.filter(item => item.itemType === key && item.assignedTo === null);
+    let itemPointer = 0;
+
+    playerList.forEach(playerName => {
+      if (!playerAssignmentsMap[playerName]) {
+        playerAssignmentsMap[playerName] = [];
+      }
+
+      let itemsGiven = 0;
+      for (let q = 0; q < maxQuota; q++) {
+        if (itemPointer < availableItemsOfCategory.length) {
+          const itemToGive = availableItemsOfCategory[itemPointer];
+          itemToGive.assignedTo = playerName;
+          playerAssignmentsMap[playerName].push(itemToGive);
+          itemPointer++;
+          itemsGiven++;
+        } else {
+          // Stock depleted for this category
+          warnings.push({
+            type: 'shortage',
+            playerName,
+            categoryName: typeObj.name,
+            needed: maxQuota - itemsGiven,
+            given: itemsGiven
+          });
+          break;
+        }
+      }
+    });
+
+    // Check if there's remaining unassigned stock in category
+    const remainingInCat = availableItemsOfCategory.length - itemPointer;
+    if (remainingInCat > 0) {
+      warnings.push({
+        type: 'leftover',
+        categoryName: typeObj.name,
+        count: remainingInCat
+      });
+    }
+  });
+
+  return {
+    allItems,
+    totalPages,
+    playerAssignmentsMap,
+    warnings
+  };
+}
+
+// Render Functions
+function calculateAndRender() {
+  const result = calculateEngine();
+  renderSideBySideCategoryTables(result);
+}
+
+// CATEGORY TABLES RENDERER (ROW COLORING GROUPED BY PLAYER)
+function renderSideBySideCategoryTables(result) {
+  const container = document.getElementById('personalSummaryList');
+  container.innerHTML = '';
+
+  const searchTerm = appData.searchTerm;
+  let hasAnyContent = false;
+
+  ITEM_TYPES.forEach(typeObj => {
+    const key = typeObj.key;
+    const categoryItems = result.allItems.filter(i => i.itemType === key);
+    const assignedItems = categoryItems.filter(i => i.assignedTo !== null);
+
+    // Group assigned items by player
+    const playerMap = {};
+    assignedItems.forEach(item => {
+      const pName = item.assignedTo;
+      if (!playerMap[pName]) playerMap[pName] = [];
+      playerMap[pName].push(item);
+    });
+
+    let playerNames = Object.keys(playerMap);
+    if (searchTerm) {
+      playerNames = playerNames.filter(n => n.toLowerCase().includes(searchTerm));
+    }
+
+    if (playerNames.length > 0 || categoryItems.length > 0) {
+      hasAnyContent = true;
+    }
+
+    let rowsHtml = '';
+    let rowCounter = 1;
+
+    if (playerNames.length === 0) {
+      rowsHtml = `
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
+            ${categoryItems.length === 0 ? 'ไม่มีไอเทมในสต็อก' : 'ไม่มีผู้ลงชื่อคิวในหมวดนี้'}
+          </td>
+        </tr>
+      `;
+    } else {
+      playerNames.forEach((pName, pIdx) => {
+        const itemsList = playerMap[pName];
+        const rowBgClass = (pIdx % 2 === 0) ? 'row-player-even' : 'row-player-odd';
+
+        itemsList.forEach((itemUnit, unitIdx) => {
+          const isGroupStart = (unitIdx === 0) ? 'player-group-start' : '';
+
+          rowsHtml += `
+            <tr class="${rowBgClass} ${isGroupStart}">
+              <td style="text-align: center;"><span class="cat-num-badge">${rowCounter}</span></td>
+              <td>
+                <div class="cat-player-name">
+                  <span>${escapeHtml(pName)}</span>
+                </div>
+              </td>
+              <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
+              <td><span class="slot-num-badge">ช่อง ${itemUnit.slot}</span></td>
+            </tr>
+          `;
+          rowCounter++;
+        });
+      });
+    }
+
+    const tableBox = document.createElement('div');
+    tableBox.className = 'category-table-box';
+    tableBox.setAttribute('data-key', key);
+
+    tableBox.innerHTML = `
+      <div class="category-table-header ${key}">
+        <div class="cat-header-title">
+          <span>${typeObj.icon} ${typeObj.name}</span>
+          <span class="badge badge-info">${categoryItems.length} ชิ้น (${playerNames.length} คน)</span>
+        </div>
+        <div class="cat-header-actions">
+          <button class="btn-cap btn-cap-single" data-key="${key}" data-name="${typeObj.name}">📸 แคปรูปตาราง</button>
+        </div>
+      </div>
+      <table class="cat-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">#</th>
+            <th>ชื่อผู้เล่น</th>
+            <th style="width: 95px;">หน้าที่</th>
+            <th style="width: 95px;">ช่องที่</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    container.appendChild(tableBox);
+  });
+
+  // Attach event listeners for per-category capture buttons
+  document.querySelectorAll('.btn-cap-single').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const key = e.target.getAttribute('data-key');
+      const name = e.target.getAttribute('data-name');
+      captureCategoryTable(key, name);
+    });
+  });
+
+  if (!hasAnyContent) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">
+        📋 กรุณาระบุจำนวนไอเทมและวางรายชื่อผู้ประมูลเพื่อเริ่มคำนวณคิว
+      </div>
+    `;
+  }
+}
+
+// Screenshot / Capture Functions
+function captureCategoryTable(key, categoryName) {
+  const tableBox = document.querySelector(`.category-table-box[data-key="${key}"]`);
+  if (!tableBox) return;
+
+  showToast(`📸 กำลังแคปรูปตาราง ${categoryName}...`);
+
+  if (typeof html2canvas === 'undefined') {
+    alert('ระบบสร้างภาพยังไม่พร้อมใช้งาน กรุณารอเบราว์เซอร์โหลดสักครู่ครับ');
+    return;
+  }
+
+  html2canvas(tableBox, {
+    backgroundColor: '#0f1626',
+    scale: 2,
+    useCORS: true
+  }).then(canvas => {
+    canvas.toBlob(blob => {
+      // 1. Trigger Download
+      const link = document.createElement('a');
+      link.download = `ตารางประมูล_${categoryName.replace(/\s+/g, '_')}.png`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+
+      // 2. Try Copying to Clipboard
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]).then(() => {
+          showToast(`📸 แคปรูปตาราง ${categoryName} เรียบร้อย! (ก๊อปใส่อัลบั้มแล้ว กด Ctrl+V ใน Discord ได้เลย)`);
+        }).catch(() => {
+          showToast(`📸 ดาวน์โหลดรูปตาราง ${categoryName} เรียบร้อยแล้ว!`);
+        });
+      } else {
+        showToast(`📸 ดาวน์โหลดรูปตาราง ${categoryName} เรียบร้อยแล้ว!`);
+      }
+    });
+  }).catch(err => {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดในการสร้างภาพ');
+  });
+}
+
+// Export formatted text to Discord/Line
+function copyGuildText() {
+  const result = calculateEngine();
+  const playerNames = Object.keys(result.playerAssignmentsMap);
+
+  if (playerNames.length === 0 || result.allItems.length === 0) {
+    alert('กรุณากรอกข้อมูลจำนวนไอเทมและรายชื่อผู้ประมูลก่อนคัดลอกครับ!');
+    return;
+  }
+
+  let text = `==============================\n`;
+  text += `⚔️ สรุปคิวประมูล RO Origin Classic ⚔️\n`;
+  text += `📦 รวมไอเทมทั้งหมด: ${result.allItems.length} ชิ้น (${result.totalPages} หน้า)\n`;
+  text += `==============================\n\n`;
+
+  playerNames.forEach(playerName => {
+    const assignedItems = result.playerAssignmentsMap[playerName];
+    if (assignedItems.length === 0) return;
+
+    text += `👤 [ ${playerName} ]\n`;
+
+    assignedItems.forEach((itemUnit) => {
+      text += `  • ${itemUnit.itemIcon} ${itemUnit.itemName}: หน้า ${itemUnit.page} (ช่อง ${itemUnit.slot})\n`;
+    });
+
+    text += `\n`;
+  });
+
+  text += `==============================\n`;
+  text += `⚠️ หมายเหตุ: กรุณากดประมูลให้ตรงตามเลขอินเด็กซ์หน้าและช่องที่ระบุไว้ครับ!`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('📋 คัดลอกสรุปคิวส่ง Discord/Line เรียบร้อยแล้ว!');
+  }).catch(err => {
+    console.error('Copy failed', err);
+    alert('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกด้วยตนเอง');
+  });
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.remove('hidden');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3500);
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
