@@ -82,6 +82,7 @@ function initEventListeners() {
   document.getElementById('btnDemo').addEventListener('click', loadDemoData);
   document.getElementById('btnReset').addEventListener('click', resetAll);
   document.getElementById('btnCopyGuild').addEventListener('click', copyGuildText);
+  document.getElementById('btnCapWheel').addEventListener('click', captureWheelTable);
 }
 
 function parseNames(text) {
@@ -240,6 +241,7 @@ function calculateEngine() {
 function calculateAndRender() {
   const result = calculateEngine();
   renderSideBySideCategoryTables(result);
+  renderWheelTable(result);
 }
 
 // CATEGORY TABLES RENDERER (ROW COLORING GROUPED BY PLAYER)
@@ -263,7 +265,8 @@ function renderSideBySideCategoryTables(result) {
       playerMap[pName].push(item);
     });
 
-    let playerNames = Object.keys(playerMap);
+    // Exclude Wheel Activity from standard category tables
+    let playerNames = Object.keys(playerMap).filter(n => n !== 'กิจกรรมวงล้อ');
     if (searchTerm) {
       playerNames = playerNames.filter(n => n.toLowerCase().includes(searchTerm));
     }
@@ -354,6 +357,62 @@ function renderSideBySideCategoryTables(result) {
       </div>
     `;
   }
+}
+
+// STANDALONE WHEEL ACTIVITY TABLE RENDERER
+function renderWheelTable(result) {
+  const container = document.getElementById('wheelSummaryContainer');
+  if (!container) return;
+
+  const wheelItems = result.playerAssignmentsMap['กิจกรรมวงล้อ'] || [];
+
+  if (wheelItems.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-muted); padding: 30px; background: #0d1424; border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.1);">
+        ✨ ไม่มีไอเทมเศษเหลือสำหรับกิจกรรมวงล้อในวันนี้
+      </div>
+    `;
+    return;
+  }
+
+  let rowsHtml = '';
+  wheelItems.forEach((itemUnit, idx) => {
+    const rowBgClass = (idx % 2 === 0) ? 'row-player-even' : 'row-player-odd';
+    rowsHtml += `
+      <tr class="${rowBgClass}">
+        <td>
+          <div class="cat-player-name">
+            <span>${itemUnit.itemIcon} ${escapeHtml(itemUnit.itemName)}</span>
+          </div>
+        </td>
+        <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
+        <td><span class="slot-num-badge">ช่อง ${itemUnit.slot}</span></td>
+      </tr>
+    `;
+  });
+
+  container.innerHTML = `
+    <div class="category-table-box wheel-table-box">
+      <div class="category-table-header wheel">
+        <div class="cat-header-title">
+          <span>🎯 ไอเทมสำหรับกิจกรรมวงล้อ</span>
+          <span class="badge badge-warning">${wheelItems.length} ชิ้น</span>
+        </div>
+      </div>
+      <table class="cat-table">
+        <thead>
+          <tr>
+            <th>รายการไอเทม</th>
+            <th style="width: 95px;">หน้าที่</th>
+            <th style="width: 95px;">ช่องที่</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 // Screenshot / Capture Functions
@@ -450,6 +509,100 @@ async function captureCategoryTable(key, categoryName) {
   }
 
   showToast(`📸 แคปรูปตาราง ${categoryName} เรียบร้อย! (${totalParts} ไฟล์)`);
+}
+
+async function captureWheelTable() {
+  const container = document.getElementById('wheelSummaryContainer');
+  if (!container) return;
+
+  const tableBox = container.querySelector('.category-table-box');
+  if (!tableBox) {
+    showToast('✨ ไม่มีไอเทมกิจกรรมวงล้อให้แคปรูปครับ');
+    return;
+  }
+
+  if (typeof html2canvas === 'undefined') {
+    alert('ระบบสร้างภาพยังไม่พร้อมใช้งาน กรุณารอเบราว์เซอร์โหลดสักครู่ครับ');
+    return;
+  }
+
+  const tbody = tableBox.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  if (rows.length === 0) return;
+
+  const MAX_ROWS_PER_IMAGE = 30;
+  const totalParts = Math.ceil(rows.length / MAX_ROWS_PER_IMAGE);
+
+  if (totalParts > 1) {
+    showToast(`📸 แบ่งแคปรูปตารางกิจกรรมวงล้อเป็น ${totalParts} ไฟล์...`);
+  } else {
+    showToast(`📸 กำลังแคปรูปตารางกิจกรรมวงล้อ...`);
+  }
+
+  for (let part = 0; part < totalParts; part++) {
+    const startIdx = part * MAX_ROWS_PER_IMAGE;
+    const endIdx = Math.min((part + 1) * MAX_ROWS_PER_IMAGE, rows.length);
+    const chunkRows = rows.slice(startIdx, endIdx);
+
+    const cloneBox = tableBox.cloneNode(true);
+
+    if (totalParts > 1) {
+      const titleDiv = cloneBox.querySelector('.cat-header-title');
+      if (titleDiv) {
+        const partTag = document.createElement('span');
+        partTag.className = 'badge badge-warning';
+        partTag.style.marginLeft = '8px';
+        partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts})`;
+        titleDiv.appendChild(partTag);
+      }
+    }
+
+    const cloneTbody = cloneBox.querySelector('tbody');
+    if (cloneTbody) {
+      cloneTbody.innerHTML = '';
+      chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
+    }
+
+    cloneBox.style.position = 'fixed';
+    cloneBox.style.left = '-9999px';
+    cloneBox.style.top = '0';
+    cloneBox.style.width = tableBox.offsetWidth + 'px';
+    document.body.appendChild(cloneBox);
+
+    try {
+      const canvas = await html2canvas(cloneBox, {
+        backgroundColor: '#0f1626',
+        scale: 2,
+        useCORS: true
+      });
+
+      await new Promise((resolve) => {
+        canvas.toBlob(blob => {
+          const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
+          const fileName = `ตารางประมูล_กิจกรรมวงล้อ${suffix}.png`;
+          
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+
+          if (part === 0 && navigator.clipboard && window.ClipboardItem) {
+            navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]).catch(() => {});
+          }
+
+          setTimeout(resolve, 400);
+        });
+      });
+    } catch (err) {
+      console.error('Capture wheel error:', err);
+    } finally {
+      document.body.removeChild(cloneBox);
+    }
+  }
+
+  showToast(`📸 แคปรูปตารางกิจกรรมวงล้อเรียบร้อยแล้ว!`);
 }
 
 // Export formatted text to Discord/Line

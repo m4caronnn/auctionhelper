@@ -578,3 +578,14 @@ body {
     width: 100%;
   }
 }
+
+/* Wheel Panel & Table Styles */
+.wheel-panel {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.category-table-header.wheel {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25), transparent);
+  color: var(--accent-gold);
+  border-top: 3px solid var(--accent-gold);
+}
