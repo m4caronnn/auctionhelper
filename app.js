@@ -27,6 +27,13 @@ let appData = {
 };
 
 // DOM Elements
+const quotaInputs = {
+  album: document.getElementById('quotaAlbum'),
+  shard: document.getElementById('quotaShard'),
+  whiteFeather: document.getElementById('quotaWhiteFeather'),
+  blackFeather: document.getElementById('quotaBlackFeather')
+};
+
 const stockInputs = {
   album: document.getElementById('stockAlbum'),
   shard: document.getElementById('stockShard'),
@@ -55,7 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
   calculateAndRender();
 });
 
+function loadQuotasFromUI() {
+  Object.keys(quotaInputs).forEach(key => {
+    const val = parseInt(quotaInputs[key].value);
+    QUOTAS[key] = (val && val > 0) ? val : 1;
+  });
+}
+
 function initEventListeners() {
+  // Quota Inputs Listener
+  Object.keys(quotaInputs).forEach(key => {
+    quotaInputs[key].addEventListener('input', () => {
+      loadQuotasFromUI();
+      updateListCounts();
+      calculateAndRender();
+    });
+  });
+
   // Stock Inputs Listener
   Object.keys(stockInputs).forEach(key => {
     stockInputs[key].addEventListener('input', () => {
@@ -95,6 +118,7 @@ function parseNames(text) {
 }
 
 function updateListCounts() {
+  loadQuotasFromUI();
   Object.keys(listInputs).forEach(key => {
     const stock = appData.stocks[key] || 0;
     const quota = QUOTAS[key];
@@ -102,12 +126,19 @@ function updateListCounts() {
 
     let names = parseNames(listInputs[key].value);
 
-    // Strictly limit allowed player names to maxPlayers based on stock
+    // Dynamic input footer text
+    const footerEl = listInputs[key].parentElement.querySelector('.input-footer');
+    const unitStr = (key === 'album') ? 'เล่ม' : 'ชิ้น';
+    if (footerEl) {
+      footerEl.textContent = `คนละ ${quota} ${unitStr} (จำกัดสูงสุดตามสต็อก)`;
+    }
+
+    // Strictly limit allowed player names to maxPlayers based on stock and quota
     if (stock > 0 && names.length > maxPlayers) {
       names = names.slice(0, maxPlayers);
       listInputs[key].value = names.join('\n');
       const catObj = ITEM_TYPES.find(t => t.key === key);
-      showToast(`⚠️ ${catObj.name}: ล็อครายชื่อไว้ได้สูงสุด ${maxPlayers} คน ตามสต็อกที่มี (${stock} ชิ้น)`);
+      showToast(`⚠️ ${catObj.name}: ปรับโควต้าเป็น ${quota} ${unitStr}/คน ล็อคได้สูงสุด ${maxPlayers} คน`);
     } else if (stock === 0 && names.length > 0) {
       names = [];
       listInputs[key].value = '';
@@ -126,6 +157,7 @@ function updateListCounts() {
 }
 
 function loadStateFromUI() {
+  loadQuotasFromUI();
   Object.keys(stockInputs).forEach(key => {
     appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
   });
@@ -133,6 +165,11 @@ function loadStateFromUI() {
 }
 
 function loadDemoData() {
+  quotaInputs.album.value = 1;
+  quotaInputs.shard.value = 1;
+  quotaInputs.whiteFeather.value = 3;
+  quotaInputs.blackFeather.value = 5;
+
   stockInputs.album.value = 2;
   stockInputs.shard.value = 3;
   stockInputs.whiteFeather.value = 70;
@@ -156,6 +193,11 @@ function loadDemoData() {
 
 function resetAll() {
   if (!confirm('คุณต้องการล้างข้อมูลทั้งหมดใช่หรือไม่?')) return;
+
+  quotaInputs.album.value = 1;
+  quotaInputs.shard.value = 1;
+  quotaInputs.whiteFeather.value = 3;
+  quotaInputs.blackFeather.value = 5;
 
   Object.keys(stockInputs).forEach(key => stockInputs[key].value = 0);
   Object.keys(listInputs).forEach(key => listInputs[key].value = '');
