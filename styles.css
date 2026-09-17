@@ -15,7 +15,7 @@
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
 
-  --font-family: 'Kanit', 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-family: 'Noto Sans Thai', 'Outfit', system-ui, -apple-system, sans-serif;
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
@@ -505,6 +505,13 @@ body {
   vertical-align: middle;
 }
 
+.cat-table th:nth-child(2),
+.cat-table td:nth-child(2),
+.cat-table th:nth-child(3),
+.cat-table td:nth-child(3) {
+  text-align: center;
+}
+
 /* HIGH-CONTRAST BLUE ALTERNATING PLAYER GROUP COLORS */
 .cat-table tbody tr.row-player-even {
   background: #0d1424;
@@ -523,7 +530,7 @@ body {
 }
 
 .cat-player-name {
-  font-weight: 700;
+  font-weight: 400;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -549,7 +556,7 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.4);
   padding: 2px 8px;
   border-radius: 4px;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.82rem;
 }
 
@@ -559,7 +566,7 @@ body {
   border: 1px solid rgba(251, 191, 36, 0.4);
   padding: 2px 8px;
   border-radius: 4px;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.82rem;
 }
 

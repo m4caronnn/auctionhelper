@@ -394,8 +394,8 @@ function renderSideBySideCategoryTables(result) {
         <thead>
           <tr>
             <th>ชื่อผู้เล่น</th>
-            <th style="width: 95px;">หน้าที่</th>
-            <th style="width: 95px;">ช่องที่</th>
+            <th style="width: 95px; text-align: center;">หน้าที่</th>
+            <th style="width: 95px; text-align: center;">ช่องที่</th>
           </tr>
         </thead>
         <tbody>
@@ -472,8 +472,8 @@ function renderWheelTable(result) {
         <thead>
           <tr>
             <th>รายการไอเทม</th>
-            <th style="width: 95px;">หน้าที่</th>
-            <th style="width: 95px;">ช่องที่</th>
+            <th style="width: 95px; text-align: center;">หน้าที่</th>
+            <th style="width: 95px; text-align: center;">ช่องที่</th>
           </tr>
         </thead>
         <tbody>
