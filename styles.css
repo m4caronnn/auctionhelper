@@ -650,3 +650,18 @@ body {
   vertical-align: middle;
   margin-right: 4px;
 }
+
+/* Player Icon Prefix Styles */
+.player-icon-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+
+.player-icon-prefix img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  vertical-align: middle;
+}

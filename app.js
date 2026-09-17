@@ -359,12 +359,13 @@ function renderSideBySideCategoryTables(result) {
 
         itemsList.forEach((itemUnit, unitIdx) => {
           const isGroupStart = (unitIdx === 0) ? 'player-group-start' : '';
+          const iconPrefix = `<span class="player-icon-prefix">${typeObj.icon}</span>`;
 
           rowsHtml += `
             <tr class="${rowBgClass} ${isGroupStart}">
               <td>
                 <div class="cat-player-name">
-                  <span>${escapeHtml(pName)}</span>
+                  ${iconPrefix}<span>${escapeHtml(pName)}</span>
                 </div>
               </td>
               <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
