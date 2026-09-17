@@ -398,6 +398,9 @@ function renderWheelTable(result) {
           <span>🎯 ไอเทมสำหรับกิจกรรมวงล้อ</span>
           <span class="badge badge-warning">${wheelItems.length} ชิ้น</span>
         </div>
+        <div class="cat-header-actions">
+          <button class="btn-cap btn-cap-wheel-inner">📸 แคปรูปตาราง</button>
+        </div>
       </div>
       <table class="cat-table">
         <thead>
@@ -413,11 +416,15 @@ function renderWheelTable(result) {
       </table>
     </div>
   `;
+
+  const innerCapBtn = container.querySelector('.btn-cap-wheel-inner');
+  if (innerCapBtn) {
+    innerCapBtn.addEventListener('click', captureWheelTable);
+  }
 }
 
 // Screenshot / Capture Functions
-async function captureCategoryTable(key, categoryName) {
-  const tableBox = document.querySelector(`.category-table-box[data-key="${key}"]`);
+async function captureTableElement(tableBox, baseFileName) {
   if (!tableBox) return;
 
   if (typeof html2canvas === 'undefined') {
@@ -426,118 +433,62 @@ async function captureCategoryTable(key, categoryName) {
   }
 
   const tbody = tableBox.querySelector('tbody');
+  if (!tbody) {
+    showToast('✨ ไม่มีรายการไอเทมให้แคปรูปครับ');
+    return;
+  }
   const rows = Array.from(tbody.querySelectorAll('tr'));
-  
-  if (rows.length === 0) return;
+  if (rows.length === 0) {
+    showToast('✨ ไม่มีรายการไอเทมให้แคปรูปครับ');
+    return;
+  }
 
   const MAX_ROWS_PER_IMAGE = 30;
   const totalParts = Math.ceil(rows.length / MAX_ROWS_PER_IMAGE);
 
-  if (totalParts > 1) {
-    showToast(`📸 แบ่งแคปรูปตาราง ${categoryName} เป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
-  } else {
-    showToast(`📸 กำลังแคปรูปตาราง ${categoryName}...`);
-  }
-
-  for (let part = 0; part < totalParts; part++) {
-    const startIdx = part * MAX_ROWS_PER_IMAGE;
-    const endIdx = Math.min((part + 1) * MAX_ROWS_PER_IMAGE, rows.length);
-    const chunkRows = rows.slice(startIdx, endIdx);
-
-    // Clone container element for capturing
-    const cloneBox = tableBox.cloneNode(true);
-
-    // Remove action buttons in header clone
-    const actions = cloneBox.querySelector('.cat-header-actions');
-    if (actions) actions.remove();
-
-    // Add part indicator if split into multiple files
-    if (totalParts > 1) {
-      const titleDiv = cloneBox.querySelector('.cat-header-title');
-      if (titleDiv) {
-        const partTag = document.createElement('span');
-        partTag.className = 'badge badge-warning';
-        partTag.style.marginLeft = '8px';
-        partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts}: แถว ${startIdx + 1}-${endIdx})`;
-        titleDiv.appendChild(partTag);
-      }
-    }
-
-    // Replace tbody with slice of rows
-    const cloneTbody = cloneBox.querySelector('tbody');
-    cloneTbody.innerHTML = '';
-    chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
-
-    // Position off-screen for clean rendering
-    cloneBox.style.position = 'fixed';
-    cloneBox.style.left = '-9999px';
-    cloneBox.style.top = '0';
-    cloneBox.style.width = tableBox.offsetWidth + 'px';
-    document.body.appendChild(cloneBox);
-
+  if (totalParts === 1) {
+    showToast(`📸 กำลังแคปรูปตาราง...`);
     try {
-      const canvas = await html2canvas(cloneBox, {
-        backgroundColor: '#0f1626',
+      const actions = tableBox.querySelector('.cat-header-actions');
+      if (actions) actions.style.display = 'none';
+
+      const canvas = await html2canvas(tableBox, {
+        backgroundColor: '#0d1424',
         scale: 2,
-        useCORS: true
+        useCORS: true,
+        logging: false
       });
 
-      await new Promise((resolve) => {
-        canvas.toBlob(blob => {
-          const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
-          const fileName = `ตารางประมูล_${categoryName.replace(/\s+/g, '_')}${suffix}.png`;
-          
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = URL.createObjectURL(blob);
-          link.click();
+      if (actions) actions.style.display = '';
 
-          if (part === 0 && navigator.clipboard && window.ClipboardItem) {
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${baseFileName}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if (navigator.clipboard && window.ClipboardItem && canvas.toBlob) {
+        canvas.toBlob(blob => {
+          if (blob) {
             navigator.clipboard.write([
               new ClipboardItem({ 'image/png': blob })
             ]).catch(() => {});
           }
-
-          setTimeout(resolve, 400);
         });
-      });
+      }
+
+      showToast(`📸 แคปรูปตารางเรียบร้อยแล้ว!`);
     } catch (err) {
       console.error('Capture error:', err);
-    } finally {
-      document.body.removeChild(cloneBox);
+      alert('เกิดข้อผิดพลาดในการสร้างภาพ: ' + err.message);
     }
-  }
-
-  showToast(`📸 แคปรูปตาราง ${categoryName} เรียบร้อย! (${totalParts} ไฟล์)`);
-}
-
-async function captureWheelTable() {
-  const container = document.getElementById('wheelSummaryContainer');
-  if (!container) return;
-
-  const tableBox = container.querySelector('.category-table-box');
-  if (!tableBox) {
-    showToast('✨ ไม่มีไอเทมกิจกรรมวงล้อให้แคปรูปครับ');
     return;
   }
 
-  if (typeof html2canvas === 'undefined') {
-    alert('ระบบสร้างภาพยังไม่พร้อมใช้งาน กรุณารอเบราว์เซอร์โหลดสักครู่ครับ');
-    return;
-  }
-
-  const tbody = tableBox.querySelector('tbody');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  if (rows.length === 0) return;
-
-  const MAX_ROWS_PER_IMAGE = 30;
-  const totalParts = Math.ceil(rows.length / MAX_ROWS_PER_IMAGE);
-
-  if (totalParts > 1) {
-    showToast(`📸 แบ่งแคปรูปตารางกิจกรรมวงล้อเป็น ${totalParts} ไฟล์...`);
-  } else {
-    showToast(`📸 กำลังแคปรูปตารางกิจกรรมวงล้อ...`);
-  }
+  // If > 30 rows, chunk into parts using temporary clone
+  showToast(`📸 กำลังแบ่งแคปรูปเป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
 
   for (let part = 0; part < totalParts; part++) {
     const startIdx = part * MAX_ROWS_PER_IMAGE;
@@ -545,16 +496,16 @@ async function captureWheelTable() {
     const chunkRows = rows.slice(startIdx, endIdx);
 
     const cloneBox = tableBox.cloneNode(true);
+    const actions = cloneBox.querySelector('.cat-header-actions');
+    if (actions) actions.remove();
 
-    if (totalParts > 1) {
-      const titleDiv = cloneBox.querySelector('.cat-header-title');
-      if (titleDiv) {
-        const partTag = document.createElement('span');
-        partTag.className = 'badge badge-warning';
-        partTag.style.marginLeft = '8px';
-        partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts})`;
-        titleDiv.appendChild(partTag);
-      }
+    const titleDiv = cloneBox.querySelector('.cat-header-title');
+    if (titleDiv) {
+      const partTag = document.createElement('span');
+      partTag.className = 'badge badge-warning';
+      partTag.style.marginLeft = '8px';
+      partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts})`;
+      titleDiv.appendChild(partTag);
     }
 
     const cloneTbody = cloneBox.querySelector('tbody');
@@ -563,46 +514,56 @@ async function captureWheelTable() {
       chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
     }
 
-    cloneBox.style.position = 'fixed';
-    cloneBox.style.left = '-9999px';
-    cloneBox.style.top = '0';
     cloneBox.style.width = tableBox.offsetWidth + 'px';
-    document.body.appendChild(cloneBox);
+    cloneBox.style.margin = '0 auto';
+    tableBox.parentNode.insertBefore(cloneBox, tableBox.nextSibling);
 
     try {
       const canvas = await html2canvas(cloneBox, {
-        backgroundColor: '#0f1626',
+        backgroundColor: '#0d1424',
         scale: 2,
-        useCORS: true
+        useCORS: true,
+        logging: false
       });
 
-      await new Promise((resolve) => {
-        canvas.toBlob(blob => {
-          const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
-          const fileName = `ตารางประมูล_กิจกรรมวงล้อ${suffix}.png`;
-          
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = URL.createObjectURL(blob);
-          link.click();
+      const dataUrl = canvas.toDataURL('image/png');
+      const suffix = `_Part${part + 1}`;
+      const fileName = `${baseFileName}${suffix}.png`;
 
-          if (part === 0 && navigator.clipboard && window.ClipboardItem) {
-            navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]).catch(() => {});
-          }
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-          setTimeout(resolve, 400);
-        });
-      });
+      await new Promise(r => setTimeout(r, 400));
     } catch (err) {
-      console.error('Capture wheel error:', err);
+      console.error('Multi-part capture error:', err);
     } finally {
-      document.body.removeChild(cloneBox);
+      cloneBox.remove();
     }
   }
 
-  showToast(`📸 แคปรูปตารางกิจกรรมวงล้อเรียบร้อยแล้ว!`);
+  showToast(`📸 แคปรูปตารางเรียบร้อยแล้ว! (${totalParts} ไฟล์)`);
+}
+
+function captureCategoryTable(key, categoryName) {
+  const tableBox = document.querySelector(`.category-table-box[data-key="${key}"]`);
+  if (!tableBox) return;
+  const fileName = `ตารางประมูล_${categoryName.replace(/\s+/g, '_')}`;
+  captureTableElement(tableBox, fileName);
+}
+
+function captureWheelTable() {
+  const container = document.getElementById('wheelSummaryContainer');
+  if (!container) return;
+  const tableBox = container.querySelector('.category-table-box');
+  if (!tableBox) {
+    showToast('✨ ไม่มีไอเทมกิจกรรมวงล้อให้แคปรูปครับ');
+    return;
+  }
+  captureTableElement(tableBox, 'ตารางประมูล_กิจกรรมวงล้อ');
 }
 
 // Export formatted text to Discord/Line
