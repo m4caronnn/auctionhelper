@@ -8,10 +8,10 @@ const QUOTAS = {
 };
 
 const ITEM_TYPES = [
-  { key: 'album', name: 'สมุดการ์ดบอส', icon: '📘', color: '#fbbf24' },
-  { key: 'shard', name: 'เศษการ์ดบอส', icon: '🧩', color: '#3b82f6' },
-  { key: 'whiteFeather', name: 'ขนนกขาว', icon: '🪶', color: '#10b981' },
-  { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '🪶', color: '#a855f7' }
+  { key: 'album', name: 'สมุดการ์ดบอส', icon: '📘', textIcon: '📘', color: '#fbbf24' },
+  { key: 'shard', name: 'เศษการ์ดบอส', icon: '🧩', textIcon: '🧩', color: '#3b82f6' },
+  { key: 'whiteFeather', name: 'ขนนกขาว', icon: '<img src="white-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(ขาว)', color: '#10b981' },
+  { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '<img src="red-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(แดง)', color: '#a855f7' }
 ];
 
 // State
@@ -654,7 +654,8 @@ function copyGuildText() {
     text += `👤 [ ${playerName} ]\n`;
 
     assignedItems.forEach((itemUnit) => {
-      text += `  • ${itemUnit.itemIcon} ${itemUnit.itemName}: หน้า ${itemUnit.page} (ช่อง ${itemUnit.slot})\n`;
+      const iconStr = itemUnit.textIcon || itemUnit.itemIcon;
+      text += `  • ${iconStr} ${itemUnit.itemName}: หน้า ${itemUnit.page} (ช่อง ${itemUnit.slot})\n`;
     });
 
     text += `\n`;

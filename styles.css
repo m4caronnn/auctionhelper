@@ -606,7 +606,7 @@ body {
 
 /* Wheel Panel & Table Styles */
 .wheel-panel {
-  border-color: rgba(245, 158, 11, 0.3);
+  border: 1px solid var(--panel-border);
 }
 
 #wheelSummaryContainer {
@@ -616,7 +616,30 @@ body {
 }
 
 .category-table-header.wheel {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25), transparent);
-  color: var(--accent-gold);
-  border-top: 3px solid var(--accent-gold);
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.25), transparent);
+  color: #60a5fa;
+  border-top: 3px solid var(--accent-blue);
+}
+
+/* Custom Feather SVG Icons */
+.feather-svg-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.feather-svg-icon-sm {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.feather-svg-icon-tbl {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 4px;
 }
