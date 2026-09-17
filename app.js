@@ -60,6 +60,7 @@ function initEventListeners() {
   Object.keys(stockInputs).forEach(key => {
     stockInputs[key].addEventListener('input', () => {
       appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
+      updateListCounts();
       calculateAndRender();
     });
   });
@@ -95,8 +96,31 @@ function parseNames(text) {
 
 function updateListCounts() {
   Object.keys(listInputs).forEach(key => {
-    const names = parseNames(listInputs[key].value);
-    countBadges[key].textContent = `${names.length} คน`;
+    const stock = appData.stocks[key] || 0;
+    const quota = QUOTAS[key];
+    const maxPlayers = Math.floor(stock / quota);
+
+    let names = parseNames(listInputs[key].value);
+
+    // Strictly limit allowed player names to maxPlayers based on stock
+    if (stock > 0 && names.length > maxPlayers) {
+      names = names.slice(0, maxPlayers);
+      listInputs[key].value = names.join('\n');
+      const catObj = ITEM_TYPES.find(t => t.key === key);
+      showToast(`⚠️ ${catObj.name}: ล็อครายชื่อไว้ได้สูงสุด ${maxPlayers} คน ตามสต็อกที่มี (${stock} ชิ้น)`);
+    } else if (stock === 0 && names.length > 0) {
+      names = [];
+      listInputs[key].value = '';
+      const catObj = ITEM_TYPES.find(t => t.key === key);
+      showToast(`⚠️ กรุณากำหนดจำนวนสต็อก ${catObj.name} ก่อนใส่รายชื่อครับ`);
+    }
+
+    if (maxPlayers > 0) {
+      countBadges[key].textContent = `${names.length}/${maxPlayers} คน`;
+    } else {
+      countBadges[key].textContent = `0 คน`;
+    }
+
     appData.lists[key] = names;
   });
 }
