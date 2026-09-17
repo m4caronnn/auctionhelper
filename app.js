@@ -110,17 +110,23 @@ function loadStateFromUI() {
 function loadDemoData() {
   stockInputs.album.value = 2;
   stockInputs.shard.value = 3;
-  stockInputs.whiteFeather.value = 12;
-  stockInputs.blackFeather.value = 15;
+  stockInputs.whiteFeather.value = 70;
+  stockInputs.blackFeather.value = 16;
 
   listInputs.album.value = 'กิลด์มาสเตอร์\nรองหัวหน้ากิลด์';
   listInputs.shard.value = 'สายแทงค์1\nสายดาเมจ1\nสายฮีล1';
-  listInputs.whiteFeather.value = 'สายแทงค์1\nสายดาเมจ1\nสายดาเมจ2\nสายฮีล1';
+  
+  // Demo 23 players for 70 white feathers (23 x 3 = 69, 1 remainder -> กิจกรรมวงล้อ)
+  const demoWhitePlayers = [];
+  for (let i = 1; i <= 23; i++) {
+    demoWhitePlayers.push(`สมาชิกที่ ${i}`);
+  }
+  listInputs.whiteFeather.value = demoWhitePlayers.join('\n');
   listInputs.blackFeather.value = 'กิลด์มาสเตอร์\nสายซัพพอร์ต1\nสายดาเมจ3';
 
   loadStateFromUI();
   calculateAndRender();
-  showToast('⚡ โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว');
+  showToast('⚡ โหลดข้อมูลตัวอย่าง 70 ขนนกขาว (เหลือ 1 เศษ -> กิจกรรมวงล้อ)');
 }
 
 function resetAll() {
@@ -179,31 +185,41 @@ function calculateEngine() {
         playerAssignmentsMap[playerName] = [];
       }
 
-      let itemsGiven = 0;
-      for (let q = 0; q < maxQuota; q++) {
-        if (itemPointer < availableItemsOfCategory.length) {
+      // Check if there are enough items left to fulfill a FULL max quota for this player
+      const remainingInStock = availableItemsOfCategory.length - itemPointer;
+      if (remainingInStock >= maxQuota) {
+        for (let q = 0; q < maxQuota; q++) {
           const itemToGive = availableItemsOfCategory[itemPointer];
           itemToGive.assignedTo = playerName;
           playerAssignmentsMap[playerName].push(itemToGive);
           itemPointer++;
-          itemsGiven++;
-        } else {
-          // Stock depleted for this category
-          warnings.push({
-            type: 'shortage',
-            playerName,
-            categoryName: typeObj.name,
-            needed: maxQuota - itemsGiven,
-            given: itemsGiven
-          });
-          break;
         }
+      } else {
+        // Stock depleted or incomplete quota for this category
+        warnings.push({
+          type: 'shortage',
+          playerName,
+          categoryName: typeObj.name,
+          needed: maxQuota,
+          given: 0
+        });
       }
     });
 
-    // Check if there's remaining unassigned stock in category
+    // Check if there's remaining unassigned stock (remainder / leftovers not forming full quota)
     const remainingInCat = availableItemsOfCategory.length - itemPointer;
     if (remainingInCat > 0) {
+      const wheelName = 'กิจกรรมวงล้อ';
+      if (!playerAssignmentsMap[wheelName]) {
+        playerAssignmentsMap[wheelName] = [];
+      }
+      for (let r = itemPointer; r < availableItemsOfCategory.length; r++) {
+        const itemToGive = availableItemsOfCategory[r];
+        itemToGive.assignedTo = wheelName;
+        playerAssignmentsMap[wheelName].push(itemToGive);
+      }
+      itemPointer = availableItemsOfCategory.length;
+
       warnings.push({
         type: 'leftover',
         categoryName: typeObj.name,
