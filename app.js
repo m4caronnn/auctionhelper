@@ -77,41 +77,57 @@ function loadQuotasFromUI() {
 function initEventListeners() {
   // Quota Inputs Listener
   Object.keys(quotaInputs).forEach(key => {
-    quotaInputs[key].addEventListener('input', () => {
-      loadQuotasFromUI();
-      updateListCounts();
-      calculateAndRender();
-    });
+    if (quotaInputs[key]) {
+      quotaInputs[key].addEventListener('input', () => {
+        loadQuotasFromUI();
+        updateListCounts();
+        calculateAndRender();
+      });
+    }
   });
 
   // Stock Inputs Listener
   Object.keys(stockInputs).forEach(key => {
-    stockInputs[key].addEventListener('input', () => {
-      appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
-      updateListCounts();
-      calculateAndRender();
-    });
+    if (stockInputs[key]) {
+      stockInputs[key].addEventListener('input', () => {
+        appData.stocks[key] = parseInt(stockInputs[key].value) || 0;
+        updateListCounts();
+        calculateAndRender();
+      });
+    }
   });
 
   // Name Lists Listener
   Object.keys(listInputs).forEach(key => {
-    listInputs[key].addEventListener('input', () => {
-      updateListCounts();
-      calculateAndRender();
-    });
+    if (listInputs[key]) {
+      listInputs[key].addEventListener('input', () => {
+        updateListCounts();
+        calculateAndRender();
+      });
+    }
   });
 
   // Search Listener
-  document.getElementById('searchMember').addEventListener('input', (e) => {
-    appData.searchTerm = e.target.value.trim().toLowerCase();
-    calculateAndRender();
-  });
+  const searchInput = document.getElementById('searchMember');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      appData.searchTerm = e.target.value.trim().toLowerCase();
+      calculateAndRender();
+    });
+  }
 
   // Action Buttons
-  document.getElementById('btnDemo').addEventListener('click', loadDemoData);
-  document.getElementById('btnReset').addEventListener('click', resetAll);
-  document.getElementById('btnCopyGuild').addEventListener('click', copyGuildText);
-  document.getElementById('btnCapWheel').addEventListener('click', captureWheelTable);
+  const btnDemo = document.getElementById('btnDemo');
+  if (btnDemo) btnDemo.addEventListener('click', loadDemoData);
+
+  const btnReset = document.getElementById('btnReset');
+  if (btnReset) btnReset.addEventListener('click', resetAll);
+
+  const btnCopyGuild = document.getElementById('btnCopyGuild');
+  if (btnCopyGuild) btnCopyGuild.addEventListener('click', copyGuildText);
+
+  const btnCapWheel = document.getElementById('btnCapWheel');
+  if (btnCapWheel) btnCapWheel.addEventListener('click', captureWheelTable);
 
   // Share & View-Only Mode Buttons
   const btnShare = document.getElementById('btnShareLink');
@@ -130,27 +146,32 @@ function initEventListeners() {
 
 // Share Link & View-Only Logic
 function encodeShareData() {
-  const data = {
-    quotas: {
-      album: parseInt(quotaInputs.album.value) || 1,
-      shard: parseInt(quotaInputs.shard.value) || 1,
-      whiteFeather: parseInt(quotaInputs.whiteFeather.value) || 3,
-      blackFeather: parseInt(quotaInputs.blackFeather.value) || 5
-    },
-    stocks: {
-      album: parseInt(stockInputs.album.value) || 0,
-      shard: parseInt(stockInputs.shard.value) || 0,
-      whiteFeather: parseInt(stockInputs.whiteFeather.value) || 0,
-      blackFeather: parseInt(stockInputs.blackFeather.value) || 0
-    },
-    lists: {
-      album: listInputs.album.value || '',
-      shard: listInputs.shard.value || '',
-      whiteFeather: listInputs.whiteFeather.value || '',
-      blackFeather: listInputs.blackFeather.value || ''
-    }
-  };
-  return btoa(encodeURIComponent(JSON.stringify(data)));
+  try {
+    const data = {
+      quotas: {
+        album: parseInt(quotaInputs.album ? quotaInputs.album.value : 1) || 1,
+        shard: parseInt(quotaInputs.shard ? quotaInputs.shard.value : 1) || 1,
+        whiteFeather: parseInt(quotaInputs.whiteFeather ? quotaInputs.whiteFeather.value : 3) || 3,
+        blackFeather: parseInt(quotaInputs.blackFeather ? quotaInputs.blackFeather.value : 5) || 5
+      },
+      stocks: {
+        album: parseInt(stockInputs.album ? stockInputs.album.value : 0) || 0,
+        shard: parseInt(stockInputs.shard ? stockInputs.shard.value : 0) || 0,
+        whiteFeather: parseInt(stockInputs.whiteFeather ? stockInputs.whiteFeather.value : 0) || 0,
+        blackFeather: parseInt(stockInputs.blackFeather ? stockInputs.blackFeather.value : 0) || 0
+      },
+      lists: {
+        album: listInputs.album ? listInputs.album.value : '',
+        shard: listInputs.shard ? listInputs.shard.value : '',
+        whiteFeather: listInputs.whiteFeather ? listInputs.whiteFeather.value : '',
+        blackFeather: listInputs.blackFeather ? listInputs.blackFeather.value : ''
+      }
+    };
+    return btoa(encodeURIComponent(JSON.stringify(data)));
+  } catch (err) {
+    console.error('encodeShareData error:', err);
+    return '';
+  }
 }
 
 function decodeShareData(encodedStr) {
@@ -165,7 +186,12 @@ function decodeShareData(encodedStr) {
 
 function generateAndCopyShareLink() {
   const encoded = encodeShareData();
-  const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encoded}`;
+  if (!encoded) {
+    showToast('⚠️ ไม่สามารถสร้างลิงก์แชร์ได้');
+    return;
+  }
+  const cleanUrl = window.location.href.split('#')[0];
+  const shareUrl = `${cleanUrl}#share=${encoded}`;
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -181,15 +207,28 @@ function generateAndCopyShareLink() {
 function fallbackCopyText(text) {
   const input = document.createElement('textarea');
   input.value = text;
+  input.style.position = 'fixed';
+  input.style.top = '0';
+  input.style.left = '0';
+  input.style.opacity = '0';
+  input.style.pointerEvents = 'none';
   document.body.appendChild(input);
+  input.focus();
   input.select();
+  
+  let success = false;
   try {
-    document.execCommand('copy');
-    showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+    success = document.execCommand('copy');
   } catch (err) {
-    alert('ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกลิงก์นี้: ' + text);
+    success = false;
   }
   document.body.removeChild(input);
+
+  if (success) {
+    showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+  } else {
+    window.prompt('คัดลอกลิงก์แชร์คิวข้างล่างนี้ได้เลยครับ:', text);
+  }
 }
 
 function setViewOnlyMode(isViewOnly) {
