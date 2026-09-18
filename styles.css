@@ -620,7 +620,10 @@ body {
 
 body.view-only-mode .stock-panel,
 body.view-only-mode .list-panel,
-body.view-only-mode .header-actions {
+body.view-only-mode .header-actions,
+body.view-only-mode .wheel-panel,
+body.view-only-mode .table-view-header,
+body.view-only-mode .cat-header-actions {
   display: none !important;
 }
 
