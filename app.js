@@ -60,6 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   loadStateFromUI();
   calculateAndRender();
+  checkUrlShareMode();
+});
+
+window.addEventListener('hashchange', () => {
+  checkUrlShareMode();
 });
 
 function loadQuotasFromUI() {
@@ -107,6 +112,124 @@ function initEventListeners() {
   document.getElementById('btnReset').addEventListener('click', resetAll);
   document.getElementById('btnCopyGuild').addEventListener('click', copyGuildText);
   document.getElementById('btnCapWheel').addEventListener('click', captureWheelTable);
+
+  // Share & View-Only Mode Buttons
+  const btnShare = document.getElementById('btnShareLink');
+  if (btnShare) {
+    btnShare.addEventListener('click', generateAndCopyShareLink);
+  }
+
+  const btnSwitchToEdit = document.getElementById('btnSwitchToEdit');
+  if (btnSwitchToEdit) {
+    btnSwitchToEdit.addEventListener('click', () => {
+      setViewOnlyMode(false);
+      showToast('✏️ สลับเป็นโหมดแก้ไขเรียบร้อยแล้ว');
+    });
+  }
+}
+
+// Share Link & View-Only Logic
+function encodeShareData() {
+  const data = {
+    quotas: {
+      album: parseInt(quotaInputs.album.value) || 1,
+      shard: parseInt(quotaInputs.shard.value) || 1,
+      whiteFeather: parseInt(quotaInputs.whiteFeather.value) || 3,
+      blackFeather: parseInt(quotaInputs.blackFeather.value) || 5
+    },
+    stocks: {
+      album: parseInt(stockInputs.album.value) || 0,
+      shard: parseInt(stockInputs.shard.value) || 0,
+      whiteFeather: parseInt(stockInputs.whiteFeather.value) || 0,
+      blackFeather: parseInt(stockInputs.blackFeather.value) || 0
+    },
+    lists: {
+      album: listInputs.album.value || '',
+      shard: listInputs.shard.value || '',
+      whiteFeather: listInputs.whiteFeather.value || '',
+      blackFeather: listInputs.blackFeather.value || ''
+    }
+  };
+  return btoa(encodeURIComponent(JSON.stringify(data)));
+}
+
+function decodeShareData(encodedStr) {
+  try {
+    const jsonStr = decodeURIComponent(atob(encodedStr));
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    console.error('Failed to decode share URL hash:', err);
+    return null;
+  }
+}
+
+function generateAndCopyShareLink() {
+  const encoded = encodeShareData();
+  const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encoded}`;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+    }).catch(() => {
+      fallbackCopyText(shareUrl);
+    });
+  } else {
+    fallbackCopyText(shareUrl);
+  }
+}
+
+function fallbackCopyText(text) {
+  const input = document.createElement('textarea');
+  input.value = text;
+  document.body.appendChild(input);
+  input.select();
+  try {
+    document.execCommand('copy');
+    showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+  } catch (err) {
+    alert('ไม่สามารถคัดลอกลิงก์ได้ กรุณาคัดลอกลิงก์นี้: ' + text);
+  }
+  document.body.removeChild(input);
+}
+
+function setViewOnlyMode(isViewOnly) {
+  const banner = document.getElementById('viewOnlyBanner');
+  if (isViewOnly) {
+    document.body.classList.add('view-only-mode');
+    if (banner) banner.classList.remove('hidden');
+  } else {
+    document.body.classList.remove('view-only-mode');
+    if (banner) banner.classList.add('hidden');
+  }
+}
+
+function checkUrlShareMode() {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#share=')) {
+    const encodedStr = hash.replace('#share=', '');
+    const shareData = decodeShareData(encodedStr);
+    if (shareData) {
+      if (shareData.quotas) {
+        Object.keys(shareData.quotas).forEach(k => {
+          if (quotaInputs[k]) quotaInputs[k].value = shareData.quotas[k];
+        });
+      }
+      if (shareData.stocks) {
+        Object.keys(shareData.stocks).forEach(k => {
+          if (stockInputs[k]) stockInputs[k].value = shareData.stocks[k];
+        });
+      }
+      if (shareData.lists) {
+        Object.keys(shareData.lists).forEach(k => {
+          if (listInputs[k]) listInputs[k].value = shareData.lists[k];
+        });
+      }
+      loadStateFromUI();
+      calculateAndRender();
+      setViewOnlyMode(true);
+      showToast('👀 เปิดในโหมด View-Only สำหรับสมาชิก');
+    }
+  }
 }
 
 function parseNames(text) {

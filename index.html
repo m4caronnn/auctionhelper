@@ -13,6 +13,16 @@
 </head>
 <body>
   <div class="app-container">
+    <!-- View Only Mode Banner -->
+    <div id="viewOnlyBanner" class="view-only-banner hidden">
+      <div class="banner-text">
+        <span>👀 <strong>โหมดผู้ดู (View-Only Mode)</strong> — สรุปคิวประมูลกิลด์วันนี้</span>
+      </div>
+      <div class="banner-actions">
+        <button id="btnSwitchToEdit" class="btn btn-secondary btn-sm">✏️ สลับเป็นโหมดแก้ไข</button>
+      </div>
+    </div>
+
     <!-- Header -->
     <header class="app-header">
       <div class="header-brand">
@@ -23,6 +33,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button id="btnShareLink" class="btn btn-primary">🔗 คัดลอกลิงก์แชร์คิว</button>
         <button id="btnDemo" class="btn btn-secondary">⚡ โหลดข้อมูลตัวอย่าง</button>
         <button id="btnReset" class="btn btn-danger-outline">🗑️ ล้างทั้งหมด</button>
       </div>
@@ -30,7 +41,7 @@
 
     <main class="main-content">
       <!-- Section 1: Stock Inventory Input -->
-      <section class="card-panel">
+      <section class="card-panel stock-panel">
         <div class="panel-header">
           <h2><span class="step-num">1</span> จำนวนไอเทมประมูลทั้งหมดวันนี้ (Inventory Stock)</h2>
           
@@ -91,7 +102,7 @@
       </section>
 
       <!-- Section 2: Player Input Lists -->
-      <section class="card-panel">
+      <section class="card-panel list-panel">
         <div class="panel-header">
           <h2><span class="step-num">2</span> รายชื่อคนประมูล (วาง 1 ชื่อ ต่อ 1 บรรทัด)</h2>
           <span class="badge badge-warning">ระบบล็อคโควต้าให้อัตโนมัติ</span>
