@@ -619,7 +619,8 @@ body {
 }
 
 body.view-only-mode .stock-panel,
-body.view-only-mode .list-panel {
+body.view-only-mode .list-panel,
+body.view-only-mode .header-actions {
   display: none !important;
 }
 
