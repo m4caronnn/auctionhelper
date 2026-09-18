@@ -144,30 +144,35 @@ function initEventListeners() {
   }
 }
 
-// Share Link & View-Only Logic
+// Share Link & View-Only Logic (Ultra-Compressed URL using LZ-String)
 function encodeShareData() {
   try {
-    const data = {
-      quotas: {
-        album: parseInt(quotaInputs.album ? quotaInputs.album.value : 1) || 1,
-        shard: parseInt(quotaInputs.shard ? quotaInputs.shard.value : 1) || 1,
-        whiteFeather: parseInt(quotaInputs.whiteFeather ? quotaInputs.whiteFeather.value : 3) || 3,
-        blackFeather: parseInt(quotaInputs.blackFeather ? quotaInputs.blackFeather.value : 5) || 5
-      },
-      stocks: {
-        album: parseInt(stockInputs.album ? stockInputs.album.value : 0) || 0,
-        shard: parseInt(stockInputs.shard ? stockInputs.shard.value : 0) || 0,
-        whiteFeather: parseInt(stockInputs.whiteFeather ? stockInputs.whiteFeather.value : 0) || 0,
-        blackFeather: parseInt(stockInputs.blackFeather ? stockInputs.blackFeather.value : 0) || 0
-      },
-      lists: {
-        album: listInputs.album ? listInputs.album.value : '',
-        shard: listInputs.shard ? listInputs.shard.value : '',
-        whiteFeather: listInputs.whiteFeather ? listInputs.whiteFeather.value : '',
-        blackFeather: listInputs.blackFeather ? listInputs.blackFeather.value : ''
-      }
-    };
-    return btoa(encodeURIComponent(JSON.stringify(data)));
+    const q = [
+      parseInt(quotaInputs.album ? quotaInputs.album.value : 1) || 1,
+      parseInt(quotaInputs.shard ? quotaInputs.shard.value : 1) || 1,
+      parseInt(quotaInputs.whiteFeather ? quotaInputs.whiteFeather.value : 3) || 3,
+      parseInt(quotaInputs.blackFeather ? quotaInputs.blackFeather.value : 5) || 5
+    ];
+    const s = [
+      parseInt(stockInputs.album ? stockInputs.album.value : 0) || 0,
+      parseInt(stockInputs.shard ? stockInputs.shard.value : 0) || 0,
+      parseInt(stockInputs.whiteFeather ? stockInputs.whiteFeather.value : 0) || 0,
+      parseInt(stockInputs.blackFeather ? stockInputs.blackFeather.value : 0) || 0
+    ];
+    const l = [
+      listInputs.album ? listInputs.album.value : '',
+      listInputs.shard ? listInputs.shard.value : '',
+      listInputs.whiteFeather ? listInputs.whiteFeather.value : '',
+      listInputs.blackFeather ? listInputs.blackFeather.value : ''
+    ];
+
+    const compactData = [q, s, l];
+    const jsonStr = JSON.stringify(compactData);
+
+    if (typeof LZString !== 'undefined' && LZString.compressToEncodedURIComponent) {
+      return LZString.compressToEncodedURIComponent(jsonStr);
+    }
+    return btoa(encodeURIComponent(jsonStr));
   } catch (err) {
     console.error('encodeShareData error:', err);
     return '';
@@ -175,13 +180,46 @@ function encodeShareData() {
 }
 
 function decodeShareData(encodedStr) {
-  try {
-    const jsonStr = decodeURIComponent(atob(encodedStr));
-    return JSON.parse(jsonStr);
-  } catch (err) {
-    console.error('Failed to decode share URL hash:', err);
-    return null;
+  if (!encodedStr) return null;
+  let jsonStr = '';
+
+  // Try LZString decompression
+  if (typeof LZString !== 'undefined' && LZString.decompressFromEncodedURIComponent) {
+    try {
+      jsonStr = LZString.decompressFromEncodedURIComponent(encodedStr);
+    } catch (e) {}
   }
+
+  // Fallback to legacy base64 if LZString failed or uncompressed
+  if (!jsonStr) {
+    try {
+      jsonStr = decodeURIComponent(atob(encodedStr));
+    } catch (e) {
+      jsonStr = '';
+    }
+  }
+
+  if (!jsonStr) return null;
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+    // New Compact Array Format: [q, s, l]
+    if (Array.isArray(parsed) && parsed.length === 3) {
+      const [q, s, l] = parsed;
+      return {
+        quotas: { album: q[0], shard: q[1], whiteFeather: q[2], blackFeather: q[3] },
+        stocks: { album: s[0], shard: s[1], whiteFeather: s[2], blackFeather: s[3] },
+        lists: { album: l[0], shard: l[1], whiteFeather: l[2], blackFeather: l[3] }
+      };
+    }
+    // Legacy Object Format Fallback
+    if (parsed.quotas || parsed.stocks || parsed.lists) {
+      return parsed;
+    }
+  } catch (err) {
+    console.error('Failed to parse decoded share data:', err);
+  }
+  return null;
 }
 
 function generateAndCopyShareLink() {
@@ -191,7 +229,7 @@ function generateAndCopyShareLink() {
     return;
   }
   const cleanUrl = window.location.href.split('#')[0];
-  const shareUrl = `${cleanUrl}#share=${encoded}`;
+  const shareUrl = `${cleanUrl}#s=${encoded}`;
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -244,8 +282,8 @@ function setViewOnlyMode(isViewOnly) {
 
 function checkUrlShareMode() {
   const hash = window.location.hash;
-  if (hash && hash.startsWith('#share=')) {
-    const encodedStr = hash.replace('#share=', '');
+  if (hash && (hash.startsWith('#share=') || hash.startsWith('#s='))) {
+    const encodedStr = hash.replace('#share=', '').replace('#s=', '');
     const shareData = decodeShareData(encodedStr);
     if (shareData) {
       if (shareData.quotas) {
