@@ -663,7 +663,7 @@ function renderSideBySideCategoryTables(result) {
                 </div>
               </td>
               <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
-              <td><span class="slot-num-badge">ช่อง ${itemUnit.slot}</span></td>
+              <td><span class="slot-num-badge">แถว ${itemUnit.slot}</span></td>
             </tr>
           `;
           rowCounter++;
@@ -690,7 +690,7 @@ function renderSideBySideCategoryTables(result) {
           <tr>
             <th>ชื่อผู้เล่น</th>
             <th style="width: 78px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 78px; text-align: center; white-space: nowrap;">ช่องที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">แถวที่</th>
           </tr>
         </thead>
         <tbody>
@@ -747,7 +747,7 @@ function renderWheelTable(result) {
           </div>
         </td>
         <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
-        <td><span class="slot-num-badge">ช่อง ${itemUnit.slot}</span></td>
+        <td><span class="slot-num-badge">แถว ${itemUnit.slot}</span></td>
       </tr>
     `;
   });
@@ -768,7 +768,7 @@ function renderWheelTable(result) {
           <tr>
             <th>รายการไอเทม</th>
             <th style="width: 78px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 78px; text-align: center; white-space: nowrap;">ช่องที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">แถวที่</th>
           </tr>
         </thead>
         <tbody>
@@ -955,14 +955,14 @@ function copyGuildText() {
 
     assignedItems.forEach((itemUnit) => {
       const iconStr = itemUnit.textIcon || itemUnit.itemIcon;
-      text += `  • ${iconStr} ${itemUnit.itemName}: หน้า ${itemUnit.page} (ช่อง ${itemUnit.slot})\n`;
+      text += `  • ${iconStr} ${itemUnit.itemName}: หน้า ${itemUnit.page} (แถว ${itemUnit.slot})\n`;
     });
 
     text += `\n`;
   });
 
   text += `==============================\n`;
-  text += `⚠️ หมายเหตุ: กรุณากดประมูลให้ตรงตามเลขอินเด็กซ์หน้าและช่องที่ระบุไว้ครับ!`;
+  text += `⚠️ หมายเหตุ: กรุณากดประมูลให้ตรงตามเลขอินเด็กซ์หน้าและแถวที่ระบุไว้ครับ!`;
 
   navigator.clipboard.writeText(text).then(() => {
     showToast('📋 คัดลอกสรุปคิวส่ง Discord/Line เรียบร้อยแล้ว!');
