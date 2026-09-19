@@ -35,7 +35,7 @@
       <div class="header-actions">
         <button id="btnShareLink" class="btn btn-primary">🔗 คัดลอกลิงก์แชร์คิว</button>
         <button id="btnDemo" class="btn btn-secondary">⚡ โหลดข้อมูลตัวอย่าง</button>
-        <button id="btnReset" class="btn btn-danger-outline">🗑️ ล้างทั้งหมด</button>
+        <button id="btnReset" class="btn btn-danger">🗑️ ล้างทั้งหมด</button>
       </div>
     </header>
 
@@ -48,7 +48,7 @@
         </div>
         <div class="stock-grid">
           <div class="stock-item album">
-            <div class="stock-icon">📘</div>
+            <div class="stock-icon"><img src="images/card-album.svg" alt="สมุดการ์ดบอส" class="feather-svg-icon"></div>
             <div class="stock-info">
               <label for="stockAlbum">สมุดการ์ดบอส</label>
               <div class="quota-input-wrapper">
@@ -61,7 +61,7 @@
           </div>
 
           <div class="stock-item shard">
-            <div class="stock-icon">🧩</div>
+            <div class="stock-icon"><img src="images/card-shard.svg" alt="เศษการ์ดบอส" class="feather-svg-icon"></div>
             <div class="stock-info">
               <label for="stockShard">เศษการ์ดบอส</label>
               <div class="quota-input-wrapper">
@@ -105,13 +105,12 @@
       <section class="card-panel list-panel">
         <div class="panel-header">
           <h2><span class="step-num">2</span> รายชื่อคนประมูล (วาง 1 ชื่อ ต่อ 1 บรรทัด)</h2>
-          <span class="badge badge-warning">ระบบล็อคโควต้าให้อัตโนมัติ</span>
         </div>
         <div class="input-lists-grid">
           <!-- Album List -->
           <div class="input-group album">
             <div class="input-header">
-              <span class="icon">📘</span>
+              <span class="icon"><img src="images/card-album.svg" alt="สมุดการ์ดบอส" class="feather-svg-icon-sm"></span>
               <h3>รายชื่อ สมุดการ์ดบอส</h3>
               <span class="list-count" id="countAlbum">0/0 คน</span>
             </div>
@@ -122,7 +121,7 @@
           <!-- Shard List -->
           <div class="input-group shard">
             <div class="input-header">
-              <span class="icon">🧩</span>
+              <span class="icon"><img src="images/card-shard.svg" alt="เศษการ์ดบอส" class="feather-svg-icon-sm"></span>
               <h3>รายชื่อ เศษการ์ดบอส</h3>
               <span class="list-count" id="countShard">0/0 คน</span>
             </div>
@@ -163,9 +162,6 @@
           </div>
         </div>
 
-        <div class="table-view-header">
-          <span class="table-caption">📸 กดปุ่ม [📸 แคปรูปตาราง] ในแต่ละตารางเพื่อเซฟรูป PNG ส่ง Discord/Line ได้ทันที!</span>
-        </div>
         <div id="personalSummaryList" class="category-tables-grid">
           <!-- Dynamic side-by-side minimal category tables injected by JS -->
         </div>

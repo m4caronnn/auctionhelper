@@ -138,24 +138,21 @@ body {
 }
 
 .btn-secondary {
-  background: #2b2d31;
+  background: #4e5058;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-secondary:hover {
-  background: #35373c;
+  background: #6d6f78;
 }
 
-.btn-danger-outline {
-  background: rgba(237, 66, 69, 0.15);
-  color: var(--accent-red);
-  border: 1px solid rgba(237, 66, 69, 0.3);
-}
-
-.btn-danger-outline:hover {
+.btn-danger {
   background: var(--accent-red);
   color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #da373a;
 }
 
 .btn-cap {

@@ -8,8 +8,8 @@ const QUOTAS = {
 };
 
 const ITEM_TYPES = [
-  { key: 'album', name: 'สมุดการ์ดบอส', icon: '📘', textIcon: '📘', color: '#fbbf24' },
-  { key: 'shard', name: 'เศษการ์ดบอส', icon: '🧩', textIcon: '🧩', color: '#3b82f6' },
+  { key: 'album', name: 'สมุดการ์ดบอส', icon: '<img src="images/card-album.svg" class="feather-svg-icon-tbl" alt="📘">', textIcon: '📘', color: '#fbbf24' },
+  { key: 'shard', name: 'เศษการ์ดบอส', icon: '<img src="images/card-shard.svg" class="feather-svg-icon-tbl" alt="🧩">', textIcon: '🧩', color: '#3b82f6' },
   { key: 'whiteFeather', name: 'ขนนกขาว', icon: '<img src="images/white-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(ขาว)', color: '#10b981' },
   { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '<img src="images/red-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(แดง)', color: '#a855f7' }
 ];
@@ -635,7 +635,7 @@ function renderWheelTable(result) {
 
   if (wheelItems.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; color: var(--text-muted); padding: 30px; background: #0d1424; border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.1);">
+      <div style="text-align: center; color: var(--text-muted); padding: 16px 0;">
         ✨ ไม่มีไอเทมเศษเหลือสำหรับกิจกรรมวงล้อในวันนี้
       </div>
     `;
