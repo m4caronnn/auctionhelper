@@ -534,7 +534,7 @@ body {
   width: 78px;
 }
 
-/* Deep Dark Mode Row Alternating Colors */
+/* Deep Dark Mode Row Alternating Colors Between Players */
 .cat-table tbody tr.row-player-even {
   background: #1e1f22;
 }
@@ -544,7 +544,7 @@ body {
 }
 
 .cat-table tbody tr.player-group-start {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .cat-table tbody tr:hover {
@@ -570,12 +570,12 @@ body {
 
 /* Discord Style Role Badges */
 .page-num-badge {
-  background: rgba(88, 101, 242, 0.2);
-  color: #5865f2;
-  border: 1px solid rgba(88, 101, 242, 0.45);
-  padding: 3px 10px;
+  background: rgba(88, 101, 242, 0.28);
+  color: #9ecbff;
+  border: 1px solid rgba(158, 203, 255, 0.55);
+  padding: 3px 8px;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.82rem;
   white-space: nowrap;
   display: inline-block;
@@ -585,7 +585,7 @@ body {
   background: rgba(87, 242, 135, 0.18);
   color: #57f287;
   border: 1px solid rgba(87, 242, 135, 0.45);
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-weight: 600;
   font-size: 0.82rem;
