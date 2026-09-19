@@ -170,7 +170,7 @@ function base64urlDecode(base64urlStr) {
   return bytes;
 }
 
-// Share Link & View-Only Logic (Ultra-Compressed URL using Native Deflate + Base64URL)
+// Share Link & View-Only Logic (Ultra-Compressed Custom Format + Deflate + Base64URL)
 async function encodeShareData() {
   try {
     const q = [
@@ -186,31 +186,41 @@ async function encodeShareData() {
       parseInt(stockInputs.blackFeather ? stockInputs.blackFeather.value : 0) || 0
     ];
     const l = [
-      parseNames(listInputs.album ? listInputs.album.value : '').join('\n'),
-      parseNames(listInputs.shard ? listInputs.shard.value : '').join('\n'),
-      parseNames(listInputs.whiteFeather ? listInputs.whiteFeather.value : '').join('\n'),
-      parseNames(listInputs.blackFeather ? listInputs.blackFeather.value : '').join('\n')
+      parseNames(listInputs.album ? listInputs.album.value : '').join('\x1f'),
+      parseNames(listInputs.shard ? listInputs.shard.value : '').join('\x1f'),
+      parseNames(listInputs.whiteFeather ? listInputs.whiteFeather.value : '').join('\x1f'),
+      parseNames(listInputs.blackFeather ? listInputs.blackFeather.value : '').join('\x1f')
     ];
 
-    const compactData = [q, s, l];
-    const jsonStr = JSON.stringify(compactData);
+    // Ultra-compact binary string structure: "qStr;sStr;lStr"
+    const qStr = (q.join(',') === '1,1,3,5') ? '' : q.join(',');
+    const sStr = s.join(',');
+    const lStr = l.join('\x1e');
+    const compactText = `${qStr};${sStr};${lStr}`;
 
     // Try Native Deflate Compression (Ultra-compact for Thai UTF-8 text)
     if (typeof CompressionStream !== 'undefined') {
       try {
-        const stream = new Blob([jsonStr]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+        const stream = new Blob([compactText]).stream().pipeThrough(new CompressionStream('deflate-raw'));
         const response = new Response(stream);
         const buffer = await response.arrayBuffer();
-        return 'z' + base64urlEncode(new Uint8Array(buffer));
+        return 'c' + base64urlEncode(new Uint8Array(buffer));
       } catch (e) {
         console.warn('CompressionStream error, fallback to LZString:', e);
       }
     }
 
+    const legacyJson = JSON.stringify([q, s, [
+      listInputs.album ? listInputs.album.value : '',
+      listInputs.shard ? listInputs.shard.value : '',
+      listInputs.whiteFeather ? listInputs.whiteFeather.value : '',
+      listInputs.blackFeather ? listInputs.blackFeather.value : ''
+    ]]);
+
     if (typeof LZString !== 'undefined' && LZString.compressToEncodedURIComponent) {
-      return LZString.compressToEncodedURIComponent(jsonStr);
+      return LZString.compressToEncodedURIComponent(legacyJson);
     }
-    return btoa(encodeURIComponent(jsonStr));
+    return btoa(encodeURIComponent(legacyJson));
   } catch (err) {
     console.error('encodeShareData error:', err);
     return '';
@@ -221,7 +231,39 @@ async function decodeShareData(encodedStr) {
   if (!encodedStr) return null;
   let jsonStr = '';
 
-  // Deflate-raw format (starts with 'z')
+  // New Custom Compact Deflate format (starts with 'c')
+  if (encodedStr.startsWith('c') && typeof DecompressionStream !== 'undefined') {
+    try {
+      const rawBase64 = encodedStr.slice(1);
+      const buffer = base64urlDecode(rawBase64);
+      const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const response = new Response(stream);
+      const text = await response.text();
+      
+      const parts = text.split(';');
+      if (parts.length >= 3) {
+        const [qStr, sStr, lStr] = parts;
+        const qArr = qStr ? qStr.split(',').map(Number) : [1, 1, 3, 5];
+        const sArr = sStr ? sStr.split(',').map(Number) : [0, 0, 0, 0];
+        const lCats = lStr ? lStr.split('\x1e') : ['', '', '', ''];
+        
+        return {
+          quotas: { album: qArr[0] || 1, shard: qArr[1] || 1, whiteFeather: qArr[2] || 3, blackFeather: qArr[3] || 5 },
+          stocks: { album: sArr[0] || 0, shard: sArr[1] || 0, whiteFeather: sArr[2] || 0, blackFeather: sArr[3] || 0 },
+          lists: {
+            album: lCats[0] ? lCats[0].split('\x1f').join('\n') : '',
+            shard: lCats[1] ? lCats[1].split('\x1f').join('\n') : '',
+            whiteFeather: lCats[2] ? lCats[2].split('\x1f').join('\n') : '',
+            blackFeather: lCats[3] ? lCats[3].split('\x1f').join('\n') : ''
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('DecompressionStream failed for custom format:', e);
+    }
+  }
+
+  // Deflate-raw JSON format (starts with 'z')
   if (encodedStr.startsWith('z') && typeof DecompressionStream !== 'undefined') {
     try {
       const rawBase64 = encodedStr.slice(1);
@@ -616,7 +658,7 @@ function renderSideBySideCategoryTables(result) {
           rowsHtml += `
             <tr class="${rowBgClass} ${isGroupStart}">
               <td>
-                <div class="cat-player-name">
+                <div class="cat-player-name" title="${escapeHtml(pName)}">
                   ${iconPrefix}<span>${escapeHtml(pName)}</span>
                 </div>
               </td>
@@ -640,15 +682,15 @@ function renderSideBySideCategoryTables(result) {
           <span class="badge badge-info">${categoryItems.length} ชิ้น (${playerNames.length} คน)</span>
         </div>
         <div class="cat-header-actions">
-          <button class="btn-cap btn-cap-single" data-key="${key}" data-name="${typeObj.name}">📸 แคปรูปตาราง</button>
+          <button class="btn-cap btn-cap-single" data-key="${key}" data-name="${typeObj.name}" title="แคปรูปตาราง">📸</button>
         </div>
       </div>
       <table class="cat-table">
         <thead>
           <tr>
             <th>ชื่อผู้เล่น</th>
-            <th style="width: 105px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 105px; text-align: center; white-space: nowrap;">ช่องที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">หน้าที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">ช่องที่</th>
           </tr>
         </thead>
         <tbody>
@@ -718,15 +760,15 @@ function renderWheelTable(result) {
           <span class="badge badge-warning">${wheelItems.length} ชิ้น</span>
         </div>
         <div class="cat-header-actions">
-          <button class="btn-cap btn-cap-wheel-inner">📸 แคปรูปตาราง</button>
+          <button class="btn-cap btn-cap-wheel-inner" title="แคปรูปตาราง">📸</button>
         </div>
       </div>
       <table class="cat-table">
         <thead>
           <tr>
             <th>รายการไอเทม</th>
-            <th style="width: 105px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 105px; text-align: center; white-space: nowrap;">ช่องที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">หน้าที่</th>
+            <th style="width: 78px; text-align: center; white-space: nowrap;">ช่องที่</th>
           </tr>
         </thead>
         <tbody>
