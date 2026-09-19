@@ -496,6 +496,39 @@ body {
   gap: 8px;
 }
 
+.btn-cap {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  background: #2b2d31;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-cap:hover {
+  background: #35373c;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-cap img,
+.btn-cap .btn-svg-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin: 0;
+  padding: 0;
+  object-fit: contain;
+}
+
 .category-table-header.album {
   border-left: 4px solid var(--accent-yellow);
   color: var(--accent-yellow);

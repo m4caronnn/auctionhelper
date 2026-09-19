@@ -682,7 +682,7 @@ function renderSideBySideCategoryTables(result) {
           <span class="badge badge-info">${categoryItems.length} ชิ้น (${playerNames.length} คน)</span>
         </div>
         <div class="cat-header-actions">
-          <button class="btn-cap btn-cap-single" data-key="${key}" data-name="${typeObj.name}" title="แคปรูปตาราง">📸</button>
+          <button class="btn-cap btn-cap-single" data-key="${key}" data-name="${typeObj.name}" title="แคปรูปตาราง"><img src="images/icon-camera.svg" class="btn-svg-icon" alt=""></button>
         </div>
       </div>
       <table class="cat-table">
@@ -705,8 +705,9 @@ function renderSideBySideCategoryTables(result) {
   // Attach event listeners for per-category capture buttons
   document.querySelectorAll('.btn-cap-single').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const key = e.target.getAttribute('data-key');
-      const name = e.target.getAttribute('data-name');
+      const btnEl = e.target.closest('button') || e.currentTarget;
+      const key = btnEl.getAttribute('data-key');
+      const name = btnEl.getAttribute('data-name');
       captureCategoryTable(key, name);
     });
   });
@@ -760,7 +761,7 @@ function renderWheelTable(result) {
           <span class="badge badge-warning">${wheelItems.length} ชิ้น</span>
         </div>
         <div class="cat-header-actions">
-          <button class="btn-cap btn-cap-wheel-inner" title="แคปรูปตาราง">📸</button>
+          <button class="btn-cap btn-cap-wheel-inner" title="แคปรูปตาราง"><img src="images/icon-camera.svg" class="btn-svg-icon" alt=""></button>
         </div>
       </div>
       <table class="cat-table">
