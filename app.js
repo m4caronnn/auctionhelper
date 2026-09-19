@@ -756,7 +756,7 @@ function renderWheelTable(result) {
     <div class="category-table-box wheel-table-box">
       <div class="category-table-header wheel">
         <div class="cat-header-title">
-          <span>🎯 ไอเทมสำหรับกิจกรรมวงล้อ</span>
+          <span><img src="images/icon-table.svg" class="btn-svg-icon" alt="" style="width: 18px; height: 18px; vertical-align: sub;"> ไอเทมสำหรับกิจกรรมวงล้อ</span>
           <span class="badge badge-warning">${wheelItems.length} ชิ้น</span>
         </div>
         <div class="cat-header-actions">
