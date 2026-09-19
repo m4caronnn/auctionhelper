@@ -10,8 +10,8 @@ const QUOTAS = {
 const ITEM_TYPES = [
   { key: 'album', name: 'สมุดการ์ดบอส', icon: '📘', textIcon: '📘', color: '#fbbf24' },
   { key: 'shard', name: 'เศษการ์ดบอส', icon: '🧩', textIcon: '🧩', color: '#3b82f6' },
-  { key: 'whiteFeather', name: 'ขนนกขาว', icon: '<img src="white-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(ขาว)', color: '#10b981' },
-  { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '<img src="red-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(แดง)', color: '#a855f7' }
+  { key: 'whiteFeather', name: 'ขนนกขาว', icon: '<img src="images/white-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(ขาว)', color: '#10b981' },
+  { key: 'blackFeather', name: 'ขนนกดำแดง', icon: '<img src="images/red-feather.svg" class="feather-svg-icon-tbl" alt="🪶">', textIcon: '🪶(แดง)', color: '#a855f7' }
 ];
 
 // State
@@ -712,67 +712,40 @@ async function captureTableElement(tableBox, baseFileName) {
 
   const MAX_ROWS_PER_IMAGE = 30;
   const totalParts = Math.ceil(rows.length / MAX_ROWS_PER_IMAGE);
+  const targetWidth = tableBox.offsetWidth || 480;
 
   if (totalParts === 1) {
     showToast(`📸 กำลังแคปรูปตาราง...`);
-    try {
-      const actions = tableBox.querySelector('.cat-header-actions');
-      if (actions) actions.style.display = 'none';
-
-      const canvas = await html2canvas(tableBox, {
-        backgroundColor: '#0d1424',
-        scale: 2,
-        useCORS: true,
-        logging: false
-      });
-
-      if (actions) actions.style.display = '';
-
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `${baseFileName}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      if (navigator.clipboard && window.ClipboardItem && canvas.toBlob) {
-        canvas.toBlob(blob => {
-          if (blob) {
-            navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]).catch(() => {});
-          }
-        });
-      }
-
-      showToast(`📸 แคปรูปตารางเรียบร้อยแล้ว!`);
-    } catch (err) {
-      console.error('Capture error:', err);
-      alert('เกิดข้อผิดพลาดในการสร้างภาพ: ' + err.message);
-    }
-    return;
+  } else {
+    showToast(`📸 กำลังแบ่งแคปรูปเป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
   }
-
-  // If > 30 rows, chunk into parts using temporary clone
-  showToast(`📸 กำลังแบ่งแคปรูปเป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
 
   for (let part = 0; part < totalParts; part++) {
     const startIdx = part * MAX_ROWS_PER_IMAGE;
     const endIdx = Math.min((part + 1) * MAX_ROWS_PER_IMAGE, rows.length);
     const chunkRows = rows.slice(startIdx, endIdx);
 
+    // Create standalone wrapper outside CSS Grid to prevent height stretching
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '-9999px';
+    wrapper.style.left = '-9999px';
+    wrapper.style.width = targetWidth + 'px';
+    wrapper.style.zIndex = '-9999';
+
     const cloneBox = tableBox.cloneNode(true);
     const actions = cloneBox.querySelector('.cat-header-actions');
     if (actions) actions.remove();
 
-    const titleDiv = cloneBox.querySelector('.cat-header-title');
-    if (titleDiv) {
-      const partTag = document.createElement('span');
-      partTag.className = 'badge badge-warning';
-      partTag.style.marginLeft = '8px';
-      partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts})`;
-      titleDiv.appendChild(partTag);
+    if (totalParts > 1) {
+      const titleDiv = cloneBox.querySelector('.cat-header-title');
+      if (titleDiv) {
+        const partTag = document.createElement('span');
+        partTag.className = 'badge badge-warning';
+        partTag.style.marginLeft = '8px';
+        partTag.textContent = `(ส่วนที่ ${part + 1}/${totalParts})`;
+        titleDiv.appendChild(partTag);
+      }
     }
 
     const cloneTbody = cloneBox.querySelector('tbody');
@@ -781,20 +754,27 @@ async function captureTableElement(tableBox, baseFileName) {
       chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
     }
 
-    cloneBox.style.width = tableBox.offsetWidth + 'px';
-    cloneBox.style.margin = '0 auto';
-    tableBox.parentNode.insertBefore(cloneBox, tableBox.nextSibling);
+    // Reset height constraints on cloneBox so canvas fits exact content size
+    cloneBox.style.width = '100%';
+    cloneBox.style.height = 'auto';
+    cloneBox.style.minHeight = '0';
+    cloneBox.style.maxHeight = 'none';
+    cloneBox.style.margin = '0';
+    cloneBox.style.boxShadow = 'none';
+
+    wrapper.appendChild(cloneBox);
+    document.body.appendChild(wrapper);
 
     try {
       const canvas = await html2canvas(cloneBox, {
-        backgroundColor: '#0d1424',
+        backgroundColor: '#1e1f22',
         scale: 2,
         useCORS: true,
         logging: false
       });
 
       const dataUrl = canvas.toDataURL('image/png');
-      const suffix = `_Part${part + 1}`;
+      const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
       const fileName = `${baseFileName}${suffix}.png`;
 
       const link = document.createElement('a');
@@ -804,15 +784,27 @@ async function captureTableElement(tableBox, baseFileName) {
       link.click();
       document.body.removeChild(link);
 
-      await new Promise(r => setTimeout(r, 400));
+      if (totalParts === 1 && navigator.clipboard && window.ClipboardItem && canvas.toBlob) {
+        canvas.toBlob(blob => {
+          if (blob) {
+            navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]).catch(() => {});
+          }
+        });
+      }
+
+      if (totalParts > 1) {
+        await new Promise(r => setTimeout(r, 400));
+      }
     } catch (err) {
-      console.error('Multi-part capture error:', err);
+      console.error('Capture error:', err);
     } finally {
-      cloneBox.remove();
+      wrapper.remove();
     }
   }
 
-  showToast(`📸 แคปรูปตารางเรียบร้อยแล้ว! (${totalParts} ไฟล์)`);
+  showToast(totalParts > 1 ? `📸 แคปรูปตารางเรียบร้อยแล้ว! (${totalParts} ไฟล์)` : `📸 แคปรูปตารางเรียบร้อยแล้ว!`);
 }
 
 function captureCategoryTable(key, categoryName) {
