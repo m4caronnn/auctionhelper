@@ -617,16 +617,16 @@ body {
 /* View Only Mode Banner - Discord Midnight Warning Banner */
 .view-only-banner {
   background: #1e1f22;
-  border: 1px solid rgba(254, 231, 92, 0.25);
-  border-left: 4px solid var(--accent-yellow);
-  padding: 12px 18px;
+  border: 1px solid rgba(254, 231, 92, 0.3);
+  border-left: 5px solid var(--accent-yellow);
+  padding: 14px 20px;
   border-radius: var(--radius-md);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  flex-wrap: wrap;
+  text-align: center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  width: 100%;
 }
 
 .view-only-banner.hidden {
@@ -636,42 +636,45 @@ body {
 .banner-content {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+  text-align: center;
 }
 
 .banner-badge {
   background: rgba(254, 231, 92, 0.15);
   color: var(--accent-yellow);
   font-weight: 700;
-  font-size: 0.82rem;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(254, 231, 92, 0.3);
+  font-size: 1.1rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(254, 231, 92, 0.35);
   white-space: nowrap;
 }
 
 .banner-notice {
-  font-size: 0.9rem;
-  color: #f3f4f6;
-  font-weight: 500;
+  font-size: 1.25rem;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .banner-notice .divider {
-  color: rgba(255, 255, 255, 0.3);
-  margin: 0 4px;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 8px;
 }
 
 .highlight-yellow {
   color: var(--accent-yellow);
   font-weight: 700;
-  margin: 0 3px;
+  margin: 0 4px;
 }
 
 .highlight-red {
   color: var(--accent-red);
   font-weight: 700;
-  margin-left: 3px;
+  margin-left: 4px;
 }
 
 body.view-only-mode .stock-panel,
