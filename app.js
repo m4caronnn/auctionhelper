@@ -56,15 +56,15 @@ const countBadges = {
 };
 
 // Initialization
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initEventListeners();
   loadStateFromUI();
   calculateAndRender();
-  checkUrlShareMode();
+  await checkUrlShareMode();
 });
 
-window.addEventListener('hashchange', () => {
-  checkUrlShareMode();
+window.addEventListener('hashchange', async () => {
+  await checkUrlShareMode();
 });
 
 function loadQuotasFromUI() {
@@ -144,8 +144,34 @@ function initEventListeners() {
   }
 }
 
-// Share Link & View-Only Logic (Ultra-Compressed URL using LZ-String)
-function encodeShareData() {
+// Helpers for Ultra-Short Base64URL Encoding/Decoding
+function base64urlEncode(uint8Array) {
+  let binary = '';
+  const len = uint8Array.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(uint8Array[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function base64urlDecode(base64urlStr) {
+  let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Share Link & View-Only Logic (Ultra-Compressed URL using Native Deflate + Base64URL)
+async function encodeShareData() {
   try {
     const q = [
       parseInt(quotaInputs.album ? quotaInputs.album.value : 1) || 1,
@@ -160,14 +186,26 @@ function encodeShareData() {
       parseInt(stockInputs.blackFeather ? stockInputs.blackFeather.value : 0) || 0
     ];
     const l = [
-      listInputs.album ? listInputs.album.value : '',
-      listInputs.shard ? listInputs.shard.value : '',
-      listInputs.whiteFeather ? listInputs.whiteFeather.value : '',
-      listInputs.blackFeather ? listInputs.blackFeather.value : ''
+      parseNames(listInputs.album ? listInputs.album.value : '').join('\n'),
+      parseNames(listInputs.shard ? listInputs.shard.value : '').join('\n'),
+      parseNames(listInputs.whiteFeather ? listInputs.whiteFeather.value : '').join('\n'),
+      parseNames(listInputs.blackFeather ? listInputs.blackFeather.value : '').join('\n')
     ];
 
     const compactData = [q, s, l];
     const jsonStr = JSON.stringify(compactData);
+
+    // Try Native Deflate Compression (Ultra-compact for Thai UTF-8 text)
+    if (typeof CompressionStream !== 'undefined') {
+      try {
+        const stream = new Blob([jsonStr]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+        const response = new Response(stream);
+        const buffer = await response.arrayBuffer();
+        return 'z' + base64urlEncode(new Uint8Array(buffer));
+      } catch (e) {
+        console.warn('CompressionStream error, fallback to LZString:', e);
+      }
+    }
 
     if (typeof LZString !== 'undefined' && LZString.compressToEncodedURIComponent) {
       return LZString.compressToEncodedURIComponent(jsonStr);
@@ -179,12 +217,26 @@ function encodeShareData() {
   }
 }
 
-function decodeShareData(encodedStr) {
+async function decodeShareData(encodedStr) {
   if (!encodedStr) return null;
   let jsonStr = '';
 
-  // Try LZString decompression
-  if (typeof LZString !== 'undefined' && LZString.decompressFromEncodedURIComponent) {
+  // Deflate-raw format (starts with 'z')
+  if (encodedStr.startsWith('z') && typeof DecompressionStream !== 'undefined') {
+    try {
+      const rawBase64 = encodedStr.slice(1);
+      const buffer = base64urlDecode(rawBase64);
+      const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const response = new Response(stream);
+      jsonStr = await response.text();
+    } catch (e) {
+      console.warn('DecompressionStream failed:', e);
+      jsonStr = '';
+    }
+  }
+
+  // Try LZString decompression fallback
+  if (!jsonStr && typeof LZString !== 'undefined' && LZString.decompressFromEncodedURIComponent) {
     try {
       jsonStr = LZString.decompressFromEncodedURIComponent(encodedStr);
     } catch (e) {}
@@ -222,8 +274,8 @@ function decodeShareData(encodedStr) {
   return null;
 }
 
-function generateAndCopyShareLink() {
-  const encoded = encodeShareData();
+async function generateAndCopyShareLink() {
+  const encoded = await encodeShareData();
   if (!encoded) {
     showToast('⚠️ ไม่สามารถสร้างลิงก์แชร์ได้');
     return;
@@ -280,11 +332,11 @@ function setViewOnlyMode(isViewOnly) {
   }
 }
 
-function checkUrlShareMode() {
+async function checkUrlShareMode() {
   const hash = window.location.hash;
   if (hash && (hash.startsWith('#share=') || hash.startsWith('#s='))) {
     const encodedStr = hash.replace('#share=', '').replace('#s=', '');
-    const shareData = decodeShareData(encodedStr);
+    const shareData = await decodeShareData(encodedStr);
     if (shareData) {
       if (shareData.quotas) {
         Object.keys(shareData.quotas).forEach(k => {
