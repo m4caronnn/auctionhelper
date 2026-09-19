@@ -827,7 +827,7 @@ async function captureTableElement(tableBox, baseFileName) {
 
   const timestamp = getFormattedTimestamp();
 
-  for (let part = 0; part < totalParts; part++) {
+  for (let part = totalParts - 1; part >= 0; part--) {
     const startIdx = part * MAX_ROWS_PER_IMAGE;
     const endIdx = Math.min((part + 1) * MAX_ROWS_PER_IMAGE, rows.length);
     const chunkRows = rows.slice(startIdx, endIdx);
