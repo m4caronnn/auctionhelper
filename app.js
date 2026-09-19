@@ -690,6 +690,17 @@ function renderWheelTable(result) {
   }
 }
 
+function getFormattedTimestamp() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}_${hh}-${min}-${ss}`;
+}
+
 // Screenshot / Capture Functions
 async function captureTableElement(tableBox, baseFileName) {
   if (!tableBox) return;
@@ -719,6 +730,8 @@ async function captureTableElement(tableBox, baseFileName) {
   } else {
     showToast(`📸 กำลังแบ่งแคปรูปเป็น ${totalParts} ไฟล์ (ไม่เกิน 30 แถว/รูป)...`);
   }
+
+  const timestamp = getFormattedTimestamp();
 
   for (let part = 0; part < totalParts; part++) {
     const startIdx = part * MAX_ROWS_PER_IMAGE;
@@ -775,7 +788,7 @@ async function captureTableElement(tableBox, baseFileName) {
 
       const dataUrl = canvas.toDataURL('image/png');
       const suffix = totalParts > 1 ? `_Part${part + 1}` : '';
-      const fileName = `${baseFileName}${suffix}.png`;
+      const fileName = `${baseFileName}_${timestamp}${suffix}.png`;
 
       const link = document.createElement('a');
       link.download = fileName;
