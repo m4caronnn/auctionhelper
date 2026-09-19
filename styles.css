@@ -1,26 +1,29 @@
 :root {
-  --bg-dark: #0b0f17;
-  --panel-bg: rgba(22, 30, 46, 0.75);
+  /* Discord Official AMOLED Midnight Dark CI Colors */
+  --bg-dark: #111214;
+  --panel-bg: #1e1f22;
   --panel-border: rgba(255, 255, 255, 0.08);
-  --panel-border-hover: rgba(245, 158, 11, 0.3);
+  --panel-border-hover: rgba(88, 101, 242, 0.5);
 
-  --accent-gold: #fbbf24;
-  --accent-gold-dark: #d97706;
-  --accent-blue: #3b82f6;
-  --accent-green: #10b981;
-  --accent-purple: #a855f7;
-  --accent-red: #ef4444;
+  --accent-blurple: #5865f2;
+  --accent-blurple-hover: #4752c4;
+  --accent-green: #57f287;
+  --accent-yellow: #fee75c;
+  --accent-red: #ed4245;
+  --accent-fuchsia: #eb459e;
 
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --text-dim: #6b7280;
+  --text-main: #f2f3f5;
+  --text-muted: #949ba4;
+  --text-dim: #80848e;
 
-  --font-family: 'Noto Sans Thai', 'Outfit', system-ui, -apple-system, sans-serif;
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --font-family: 'gg sans', 'Noto Sans Thai', 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'gg sans', 'Roboto Mono', monospace;
 
-  --shadow-glow: 0 0 25px rgba(245, 158, 11, 0.15);
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+
+  --shadow-discord: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -31,14 +34,12 @@
 
 body {
   background-color: var(--bg-dark);
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.08) 0%, transparent 40%);
   color: var(--text-main);
   font-family: var(--font-family);
   min-height: 100vh;
   line-height: 1.5;
   padding: 24px 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
@@ -46,20 +47,19 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-/* Header */
+/* Header - Discord Midnight Flat Navbar */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--panel-bg);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--panel-border);
-  padding: 20px 28px;
+  padding: 16px 24px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-discord);
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -67,144 +67,147 @@ body {
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .logo-icon {
-  font-size: 2.2rem;
-  background: linear-gradient(135deg, #fbbf24, #d97706);
-  width: 56px;
-  height: 56px;
+  font-size: 1.8rem;
+  background: var(--accent-blurple);
+  color: #ffffff;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 10px rgba(88, 101, 242, 0.4);
 }
 
 .header-brand h1 {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #ffffff, #fbbf24);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  letter-spacing: -0.2px;
 }
 
 .subtitle {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
+  font-weight: 400;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-/* Buttons */
+/* Discord Dark Mode Buttons */
 .btn {
   font-family: var(--font-family);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   padding: 10px 18px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
+.btn:active {
+  transform: translateY(1px);
+}
+
 .btn-primary {
-  background: linear-gradient(135deg, #fbbf24, #d97706);
-  color: #0b0f17;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  background: var(--accent-blurple);
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  background: var(--accent-blurple-hover);
 }
 
 .btn-secondary {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #2b2d31;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-secondary:hover {
-  background: rgba(59, 130, 246, 0.25);
-  transform: translateY(-2px);
+  background: #35373c;
 }
 
 .btn-danger-outline {
-  background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(237, 66, 69, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(237, 66, 69, 0.3);
 }
 
 .btn-danger-outline:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--accent-red);
+  color: #ffffff;
 }
 
 .btn-cap {
-  background: rgba(255, 255, 255, 0.12);
+  background: #2b2d31;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
   font-family: var(--font-family);
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
 .btn-cap:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+  background: #35373c;
 }
 
-/* Panels */
+/* Discord Dark Mode Card Panels */
 .card-panel {
   background: var(--panel-bg);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  box-shadow: var(--shadow-discord);
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding-bottom: 14px;
   flex-wrap: wrap;
   gap: 12px;
 }
 
 .panel-header h2 {
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .step-num {
-  background: rgba(251, 191, 36, 0.15);
-  color: var(--accent-gold);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  width: 28px;
-  height: 28px;
+  background: rgba(88, 101, 242, 0.2);
+  color: var(--accent-blurple);
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -215,50 +218,50 @@ body {
 
 .badge {
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 12px;
   font-size: 0.78rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .badge-info {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(88, 101, 242, 0.2);
+  color: #5865f2;
+  border: 1px solid rgba(88, 101, 242, 0.35);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(254, 231, 92, 0.18);
+  color: #fee75c;
+  border: 1px solid rgba(254, 231, 92, 0.35);
 }
 
 /* Stock Grid */
 .stock-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .stock-item {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--panel-border);
+  background: #2b2d31;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  transition: border-color 0.2s;
+  gap: 12px;
+  transition: border-color 0.15s ease;
 }
 
 .stock-item:hover {
-  border-color: var(--panel-border-hover);
+  border-color: var(--accent-blurple);
 }
 
 .stock-icon {
-  font-size: 1.8rem;
-  background: rgba(255, 255, 255, 0.05);
-  width: 48px;
-  height: 48px;
+  font-size: 1.7rem;
+  background: #1e1f22;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,8 +276,9 @@ body {
 }
 
 .stock-info label {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .quota-input-wrapper {
@@ -282,7 +286,7 @@ body {
   align-items: center;
   gap: 4px;
   font-size: 0.78rem;
-  color: var(--accent-gold);
+  color: var(--accent-yellow);
   margin-top: 2px;
 }
 
@@ -290,50 +294,50 @@ body {
   width: 42px !important;
   font-size: 0.88rem !important;
   padding: 2px 4px !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(251, 191, 36, 0.4) !important;
-  color: var(--accent-gold) !important;
+  background: #111214 !important;
+  border: 1px solid rgba(254, 231, 92, 0.4) !important;
+  color: var(--accent-yellow) !important;
   border-radius: 4px !important;
   font-weight: 700 !important;
   text-align: center;
+  outline: none;
 }
 
 .quota-input:focus {
-  border-color: #fbbf24 !important;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3) !important;
+  border-color: var(--accent-yellow) !important;
 }
 
 .stock-item input {
-  width: 68px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
+  width: 66px;
+  background: #111214;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-family: var(--font-family);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   text-align: center;
   padding: 8px;
   border-radius: var(--radius-sm);
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .stock-item input:focus {
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+  border-color: var(--accent-blurple);
 }
 
 /* Input Lists Grid */
 .input-lists-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .input-group {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--panel-border);
+  background: #2b2d31;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -346,35 +350,38 @@ body {
 }
 
 .input-header h3 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   flex-grow: 1;
+  color: #ffffff;
 }
 
 .list-count {
   font-size: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: #1e1f22;
   padding: 2px 8px;
   border-radius: 10px;
-  color: var(--accent-gold);
+  color: var(--accent-yellow);
+  font-weight: 600;
 }
 
 .input-group textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: #111214;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
   color: var(--text-main);
   font-family: var(--font-family);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   padding: 10px;
   resize: vertical;
   outline: none;
   min-height: 120px;
+  transition: border-color 0.15s ease;
 }
 
 .input-group textarea:focus {
-  border-color: var(--accent-gold);
+  border-color: var(--accent-blurple);
 }
 
 .input-footer {
@@ -383,9 +390,9 @@ body {
   text-align: right;
 }
 
-/* Results Panel & Search */
+/* Search Box */
 .search-box input {
-  background: rgba(0, 0, 0, 0.4);
+  background: #111214;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
   color: var(--text-main);
@@ -394,18 +401,19 @@ body {
   padding: 8px 14px;
   outline: none;
   width: 220px;
+  transition: border-color 0.15s ease;
 }
 
 .search-box input:focus {
-  border-color: var(--accent-gold);
+  border-color: var(--accent-blurple);
 }
 
-/* SIDE-BY-SIDE CATEGORY TABLES */
+/* Category Tables Grid - Deep Dark Mode */
 .table-view-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .table-caption {
@@ -417,15 +425,15 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
   justify-content: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .category-table-box {
-  background: #0d1424;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: #1e1f22;
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-discord);
   display: flex;
   flex-direction: column;
   max-width: 480px;
@@ -436,13 +444,14 @@ body {
 .category-table-header {
   padding: 12px 16px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   gap: 10px;
   flex-wrap: wrap;
+  background: #111214;
 }
 
 .cat-header-title {
@@ -458,27 +467,23 @@ body {
 }
 
 .category-table-header.album {
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.2), transparent);
-  color: var(--accent-gold);
-  border-top: 3px solid var(--accent-gold);
+  border-left: 4px solid var(--accent-yellow);
+  color: var(--accent-yellow);
 }
 
 .category-table-header.shard {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.25), transparent);
-  color: #60a5fa;
-  border-top: 3px solid var(--accent-blue);
+  border-left: 4px solid var(--accent-blurple);
+  color: #7983f5;
 }
 
 .category-table-header.whiteFeather {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), transparent);
-  color: #34d399;
-  border-top: 3px solid var(--accent-green);
+  border-left: 4px solid var(--accent-green);
+  color: var(--accent-green);
 }
 
 .category-table-header.blackFeather {
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), transparent);
-  color: #c084fc;
-  border-top: 3px solid var(--accent-purple);
+  border-left: 4px solid var(--accent-fuchsia);
+  color: var(--accent-fuchsia);
 }
 
 .cat-table {
@@ -489,12 +494,12 @@ body {
 }
 
 .cat-table th {
-  background: #152035;
-  color: #93c5fd;
-  font-size: 0.78rem;
+  background: #111214;
+  color: var(--text-muted);
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -512,73 +517,65 @@ body {
   text-align: center;
 }
 
-/* HIGH-CONTRAST BLUE ALTERNATING PLAYER GROUP COLORS */
+/* Deep Dark Mode Row Alternating Colors */
 .cat-table tbody tr.row-player-even {
-  background: #0d1424;
+  background: #1e1f22;
 }
 
 .cat-table tbody tr.row-player-odd {
-  background: rgba(30, 64, 115, 0.45);
+  background: #2b2d31;
 }
 
 .cat-table tbody tr.player-group-start {
-  border-top: 1px solid rgba(59, 130, 246, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .cat-table tbody tr:hover {
-  background: rgba(59, 130, 246, 0.25);
+  background: rgba(88, 101, 242, 0.2);
 }
 
 .cat-player-name {
-  font-weight: 400;
+  font-weight: 500;
   color: #ffffff;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.cat-num-badge {
-  background: rgba(255, 255, 255, 0.1);
-  color: #dbeafe;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 0.72rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-}
-
+/* Discord Style Role Badges */
 .page-num-badge {
-  background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  padding: 2px 8px;
+  background: rgba(88, 101, 242, 0.2);
+  color: #5865f2;
+  border: 1px solid rgba(88, 101, 242, 0.45);
+  padding: 3px 10px;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.82rem;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .slot-num-badge {
-  background: rgba(251, 191, 36, 0.2);
-  color: var(--accent-gold);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 2px 8px;
+  background: rgba(87, 242, 135, 0.18);
+  color: #57f287;
+  border: 1px solid rgba(87, 242, 135, 0.45);
+  padding: 3px 10px;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.82rem;
+  white-space: nowrap;
+  display: inline-block;
 }
 
-/* Toast */
+/* Toast Notification */
 .toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: linear-gradient(135deg, #fbbf24, #d97706);
-  color: #0b0f17;
+  background: var(--accent-blurple);
+  color: #ffffff;
   font-weight: 700;
-  padding: 14px 24px;
+  padding: 14px 22px;
   border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   z-index: 1000;
@@ -591,18 +588,20 @@ body {
   pointer-events: none;
 }
 
-/* View Only Mode Banner & Styles */
+/* View Only Mode Banner - Discord Midnight Warning Banner */
 .view-only-banner {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(217, 119, 6, 0.25));
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 12px 20px;
+  background: #1e1f22;
+  border-left: 4px solid var(--accent-yellow);
+  border-top: 1px solid var(--panel-border);
+  border-right: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 14px 20px;
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+  box-shadow: var(--shadow-discord);
   flex-wrap: wrap;
 }
 
@@ -612,7 +611,8 @@ body {
 
 .banner-text {
   font-size: 0.95rem;
-  color: #fef08a;
+  color: var(--accent-yellow);
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -659,9 +659,9 @@ body.view-only-mode .cat-header-actions {
 }
 
 .category-table-header.wheel {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.25), transparent);
-  color: #60a5fa;
-  border-top: 3px solid var(--accent-blue);
+  border-left: 4px solid var(--accent-blurple);
+  color: #7983f5;
+  background: #111214;
 }
 
 /* Custom Feather SVG Icons */
