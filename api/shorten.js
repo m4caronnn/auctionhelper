@@ -22,80 +22,71 @@ export default async function handler(req, res) {
       try { body = JSON.parse(body); } catch (e) {}
     }
     const data = body && body.data;
-    if (!data) {
-      return res.status(400).json({ error: 'Missing data payload' });
+    const longUrl = body && body.longUrl;
+
+    if (!data && !longUrl) {
+      return res.status(400).json({ error: 'Missing data or longUrl payload' });
     }
 
-    // Find KV / Redis REST API URL & Token across all possible Vercel env var names
+    // Find REST URL & Token if Vercel KV / Upstash REST API is configured
     let rawUrl = process.env.KV_REST_API_URL 
       || process.env.STORAGE_REST_API_URL 
       || process.env.UPSTASH_REDIS_REST_URL 
-      || process.env.REDIS_REST_API_URL
-      || process.env.STORAGE_URL
-      || process.env.REDIS_URL
-      || process.env.KV_URL;
+      || process.env.REDIS_REST_API_URL;
 
     let token = process.env.KV_REST_API_TOKEN 
       || process.env.STORAGE_REST_API_TOKEN 
       || process.env.UPSTASH_REDIS_REST_TOKEN 
-      || process.env.REDIS_REST_API_TOKEN
-      || process.env.STORAGE_PASSWORD
-      || process.env.REDIS_PASSWORD;
+      || process.env.REDIS_REST_API_TOKEN;
 
-    if (!rawUrl || !token) {
-      console.error('Env vars missing. Available env keys:', Object.keys(process.env).filter(k => k.includes('REST') || k.includes('STORAGE') || k.includes('REDIS') || k.includes('KV')));
-      return res.status(500).json({ 
-        error: 'Vercel Database environment variables not found. Please Redeploy on Vercel Dashboard.' 
-      });
-    }
+    // 1. Try Vercel KV / Upstash REST API if available
+    if (rawUrl && token && data) {
+      let restUrl = rawUrl.trim();
+      if (!restUrl.startsWith('http://') && !restUrl.startsWith('https://')) {
+        restUrl = `https://${restUrl}`;
+      }
+      restUrl = restUrl.replace(/\/+$/, '');
 
-    // Format REST URL
-    let restUrl = rawUrl.trim();
-    if (restUrl.startsWith('redis://') || restUrl.startsWith('rediss://')) {
-      const parts = restUrl.split('@');
-      if (parts.length > 1) {
-        const hostPort = parts[1].split('/')[0];
-        const host = hostPort.split(':')[0];
-        restUrl = `https://${host}`;
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let shortId = '';
+      for (let i = 0; i < 6; i++) {
+        shortId += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      try {
+        let kvRes = await fetch(restUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(['SET', `share:${shortId}`, data, 'EX', 7776000])
+        });
+
+        if (kvRes.ok) {
+          return res.status(200).json({ shortId });
+        }
+      } catch (e) {
+        console.warn('Vercel KV REST write failed, fallback to TinyURL:', e);
       }
     }
-    if (!restUrl.startsWith('http://') && !restUrl.startsWith('https://')) {
-      restUrl = `https://${restUrl}`;
-    }
-    restUrl = restUrl.replace(/\/+$/, '');
 
-    // Generate 6-char random alphanumeric ID
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let shortId = '';
-    for (let i = 0; i < 6; i++) {
-      shortId += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    // Try Upstash / Redis REST POST array format first
-    let kvRes = await fetch(restUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(['SET', `share:${shortId}`, data, 'EX', 7776000])
-    });
-
-    // Fallback to GET endpoint format if POST array format didn't match
-    if (!kvRes.ok) {
-      const getEndpoint = `${restUrl}/set/share:${shortId}/${encodeURIComponent(data)}?EX=7776000`;
-      kvRes = await fetch(getEndpoint, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    // 2. Fallback: Use TinyURL API to shorten longUrl
+    if (longUrl) {
+      try {
+        const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+        if (tinyRes.ok) {
+          const shortUrlText = await tinyRes.text();
+          if (shortUrlText && shortUrlText.startsWith('http')) {
+            return res.status(200).json({ shortUrl: shortUrlText.trim() });
+          }
+        }
+      } catch (e) {
+        console.warn('TinyURL API error:', e);
+      }
     }
 
-    if (!kvRes.ok) {
-      const errText = await kvRes.text();
-      console.error('KV SET failed:', errText);
-      return res.status(500).json({ error: 'Failed to write to Redis database' });
-    }
-
-    return res.status(200).json({ shortId });
+    return res.status(500).json({ error: 'Could not shorten URL' });
   } catch (err) {
     console.error('Shorten handler error:', err);
     return res.status(500).json({ error: err.message || 'Internal Server Error' });
