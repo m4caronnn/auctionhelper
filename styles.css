@@ -1061,39 +1061,39 @@ body.light-theme .list-count {
 
 body.light-theme .category-table-box {
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(15, 43, 60, 0.04);
+  box-shadow: 0 2px 12px rgba(15, 43, 60, 0.06);
 }
 
 body.light-theme .category-table-header,
 body.light-theme .category-table-header.wheel {
   background: #f1f5f9 !important;
   color: #0f2b3c !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 body.light-theme .cat-table th {
   background: #f1f5f9 !important;
   color: #64748b !important;
-  border-top: 1px solid #e2e8f0 !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 body.light-theme .cat-table td {
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 body.light-theme .cat-table tbody tr.row-player-even {
-  background: #f8fafc !important;
+  background: #ffffff !important;
 }
 
 body.light-theme .cat-table tbody tr.row-player-odd {
-  background: #eef2f6 !important;
+  background: #e2e8f0 !important;
 }
 
 body.light-theme .cat-table tbody tr.player-group-start {
-  border-top: 1px solid #cbd5e1 !important;
+  border-top: 1.5px solid #94a3b8 !important;
 }
 
 body.light-theme .cat-table tbody tr:hover {
