@@ -1,5 +1,6 @@
 // Vercel Serverless Function: POST /api/shorten
 export default async function handler(req, res) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -21,14 +22,21 @@ export default async function handler(req, res) {
     if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch (e) {}
     }
-    const data = body && body.data;
-    const longUrl = body && body.longUrl;
 
-    if (!data && !longUrl) {
-      return res.status(400).json({ error: 'Missing data or longUrl payload' });
+    const data = body && body.data;
+    let longUrl = body && body.longUrl;
+
+    // Determine domain & target URL to shorten
+    const referer = (req.headers.referer || req.headers.origin || 'https://auctionhelper.vercel.app').split('#')[0].replace(/\/+$/, '');
+    if (!longUrl && data) {
+      longUrl = `${referer}#s=${data}`;
     }
 
-    // Find REST URL & Token if Vercel KV / Upstash REST API is configured
+    if (!longUrl && !data) {
+      return res.status(400).json({ error: 'Missing payload' });
+    }
+
+    // 1. Try Vercel KV / Upstash REST API if configured
     let rawUrl = process.env.KV_REST_API_URL 
       || process.env.STORAGE_REST_API_URL 
       || process.env.UPSTASH_REDIS_REST_URL 
@@ -39,7 +47,6 @@ export default async function handler(req, res) {
       || process.env.UPSTASH_REDIS_REST_TOKEN 
       || process.env.REDIS_REST_API_TOKEN;
 
-    // 1. Try Vercel KV / Upstash REST API if available
     if (rawUrl && token && data) {
       let restUrl = rawUrl.trim();
       if (!restUrl.startsWith('http://') && !restUrl.startsWith('https://')) {
@@ -64,14 +71,14 @@ export default async function handler(req, res) {
         });
 
         if (kvRes.ok) {
-          return res.status(200).json({ shortId });
+          return res.status(200).json({ shortId, shortUrl: `${referer}/s/${shortId}` });
         }
       } catch (e) {
         console.warn('Vercel KV REST write failed, fallback to TinyURL:', e);
       }
     }
 
-    // 2. Fallback: Use TinyURL API to shorten longUrl
+    // 2. Server-Side Fail-Safe: Call TinyURL API from Node.js server (No CORS restrictions!)
     if (longUrl) {
       try {
         const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
@@ -82,7 +89,7 @@ export default async function handler(req, res) {
           }
         }
       } catch (e) {
-        console.warn('TinyURL API error:', e);
+        console.warn('TinyURL server fetch error:', e);
       }
     }
 
