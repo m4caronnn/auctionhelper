@@ -1,6 +1,5 @@
 // Vercel Serverless Function: GET /api/get-share?id=xxx
 export default async function handler(req, res) {
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
@@ -10,8 +9,7 @@ export default async function handler(req, res) {
   );
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   const { id } = req.query || {};
@@ -20,30 +18,70 @@ export default async function handler(req, res) {
   }
 
   try {
-    const kvUrl = process.env.KV_REST_API_URL || process.env.STORAGE_REST_API_URL || process.env.STORAGE_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN || process.env.STORAGE_REST_API_TOKEN || process.env.STORAGE_TOKEN || process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    let rawUrl = process.env.KV_REST_API_URL 
+      || process.env.STORAGE_REST_API_URL 
+      || process.env.UPSTASH_REDIS_REST_URL 
+      || process.env.REDIS_REST_API_URL
+      || process.env.STORAGE_URL
+      || process.env.REDIS_URL
+      || process.env.KV_URL;
 
-    if (!kvUrl || !kvToken) {
-      return res.status(500).json({ error: 'Vercel KV Database environment variables not configured' });
+    let token = process.env.KV_REST_API_TOKEN 
+      || process.env.STORAGE_REST_API_TOKEN 
+      || process.env.UPSTASH_REDIS_REST_TOKEN 
+      || process.env.REDIS_REST_API_TOKEN
+      || process.env.STORAGE_PASSWORD
+      || process.env.REDIS_PASSWORD;
+
+    if (!rawUrl || !token) {
+      return res.status(500).json({ error: 'Vercel Database environment variables not found' });
     }
 
-    // Fetch data from Vercel KV REST API
-    const kvEndpoint = `${kvUrl}/get/share:${id}`;
-    const kvRes = await fetch(kvEndpoint, {
-      headers: {
-        Authorization: `Bearer ${kvToken}`
+    let restUrl = rawUrl.trim();
+    if (restUrl.startsWith('redis://') || restUrl.startsWith('rediss://')) {
+      const parts = restUrl.split('@');
+      if (parts.length > 1) {
+        const hostPort = parts[1].split('/')[0];
+        const host = hostPort.split(':')[0];
+        restUrl = `https://${host}`;
       }
-    });
-
-    if (!kvRes.ok) {
-      return res.status(404).json({ error: 'Share ID not found' });
     }
+    if (!restUrl.startsWith('http://') && !restUrl.startsWith('https://')) {
+      restUrl = `https://${restUrl}`;
+    }
+    restUrl = restUrl.replace(/\/+$/, '');
 
-    const json = await kvRes.json();
-    const storedData = json && json.result;
+    // Try POST array format first
+    let storedData = null;
+    try {
+      let kvRes = await fetch(restUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['GET', `share:${id}`])
+      });
+      if (kvRes.ok) {
+        const json = await kvRes.json();
+        storedData = json && json.result;
+      }
+    } catch (e) {}
+
+    // Fallback to GET endpoint format
+    if (!storedData) {
+      const getEndpoint = `${restUrl}/get/share:${id}`;
+      const resGet = await fetch(getEndpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (resGet.ok) {
+        const json = await resGet.json();
+        storedData = json && json.result;
+      }
+    }
 
     if (!storedData) {
-      return res.status(404).json({ error: 'Share data expired or not found' });
+      return res.status(404).json({ error: 'Share ID not found or expired' });
     }
 
     return res.status(200).json({ data: storedData });
