@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/s/:id",
+      "destination": "/index.html#s=:id"
+    }
+  ]
+}

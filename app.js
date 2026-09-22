@@ -359,21 +359,44 @@ async function generateAndCopyShareLink() {
     showToast('⚠️ ไม่สามารถสร้างลิงก์แชร์ได้');
     return;
   }
-  const cleanUrl = window.location.href.split('#')[0];
-  const shareUrl = `${cleanUrl}#s=${encoded}`;
+  const cleanUrl = window.location.href.split('#')[0].replace(/\/+$/, '');
+  let shareUrl = `${cleanUrl}#s=${encoded}`;
+  let isShortened = false;
+
+  // Attempt Vercel KV Shortener API
+  try {
+    const res = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: encoded })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.shortId) {
+        shareUrl = `${cleanUrl}/s/${json.shortId}`;
+        isShortened = true;
+      }
+    }
+  } catch (e) {
+    // Fallback to inline compressed hash
+  }
+
+  const msg = isShortened
+    ? '🔗 คัดลอกลิงก์ย่อ Vercel (View-Only) เรียบร้อยแล้ว!'
+    : '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!';
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(shareUrl).then(() => {
-      showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+      showToast(msg);
     }).catch(() => {
-      fallbackCopyText(shareUrl);
+      fallbackCopyText(shareUrl, msg);
     });
   } else {
-    fallbackCopyText(shareUrl);
+    fallbackCopyText(shareUrl, msg);
   }
 }
 
-function fallbackCopyText(text) {
+function fallbackCopyText(text, successMsg) {
   const input = document.createElement('textarea');
   input.value = text;
   input.style.position = 'fixed';
@@ -394,7 +417,7 @@ function fallbackCopyText(text) {
   document.body.removeChild(input);
 
   if (success) {
-    showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+    showToast(successMsg || '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
   } else {
     window.prompt('คัดลอกลิงก์แชร์คิวข้างล่างนี้ได้เลยครับ:', text);
   }
@@ -413,33 +436,56 @@ function setViewOnlyMode(isViewOnly) {
 
 async function checkUrlShareMode() {
   const hash = window.location.hash;
-  if (hash && (hash.startsWith('#share=') || hash.startsWith('#s='))) {
-    const encodedStr = hash.replace('#share=', '').replace('#s=', '');
-    const shareData = await decodeShareData(encodedStr);
-    if (shareData) {
-      if (shareData.quotas) {
-        Object.keys(shareData.quotas).forEach(k => {
-          if (quotaInputs[k]) quotaInputs[k].value = shareData.quotas[k];
-        });
+  const path = window.location.pathname;
+  let encodedStr = '';
+
+  if (path.includes('/s/')) {
+    encodedStr = path.split('/s/')[1].replace(/\/+$/, '');
+  } else if (hash && (hash.startsWith('#share=') || hash.startsWith('#s='))) {
+    encodedStr = hash.replace('#share=', '').replace('#s=', '');
+  }
+
+  if (!encodedStr) return;
+
+  // Fetch from Vercel KV API if code is a Vercel short ID
+  if (encodedStr.length <= 10 && !encodedStr.startsWith('c') && !encodedStr.startsWith('z')) {
+    try {
+      const res = await fetch(`/api/get-share?id=${encodeURIComponent(encodedStr)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.data) {
+          encodedStr = json.data;
+        }
       }
-      if (shareData.stocks) {
-        Object.keys(shareData.stocks).forEach(k => {
-          if (stockInputs[k]) stockInputs[k].value = shareData.stocks[k];
-        });
-      }
-      if (shareData.lists) {
-        Object.keys(shareData.lists).forEach(k => {
-          if (listInputs[k]) listInputs[k].value = shareData.lists[k];
-        });
-      }
-      if (shareData.buyoutDeductions) {
-        appData.buyoutDeductions = shareData.buyoutDeductions;
-      }
-      loadStateFromUI();
-      calculateAndRender();
-      setViewOnlyMode(true);
-      showToast('👀 เปิดในโหมด View-Only สำหรับสมาชิก (รวมรายการที่โดน Buyout แล้ว)');
+    } catch (e) {
+      console.warn('Failed to fetch share data from Vercel API:', e);
     }
+  }
+
+  const shareData = await decodeShareData(encodedStr);
+  if (shareData) {
+    if (shareData.quotas) {
+      Object.keys(shareData.quotas).forEach(k => {
+        if (quotaInputs[k]) quotaInputs[k].value = shareData.quotas[k];
+      });
+    }
+    if (shareData.stocks) {
+      Object.keys(shareData.stocks).forEach(k => {
+        if (stockInputs[k]) stockInputs[k].value = shareData.stocks[k];
+      });
+    }
+    if (shareData.lists) {
+      Object.keys(shareData.lists).forEach(k => {
+        if (listInputs[k]) listInputs[k].value = shareData.lists[k];
+      });
+    }
+    if (shareData.buyoutDeductions) {
+      appData.buyoutDeductions = shareData.buyoutDeductions;
+    }
+    loadStateFromUI();
+    calculateAndRender();
+    setViewOnlyMode(true);
+    showToast('👀 เปิดในโหมด View-Only สำหรับสมาชิก (รวมรายการที่โดน Buyout แล้ว)');
   }
 }
 
