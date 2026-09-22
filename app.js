@@ -817,10 +817,10 @@ function renderSideBySideCategoryTables(result) {
       <table class="cat-table">
         <thead>
           <tr>
-            <th>ชื่อผู้เล่น</th>
-            <th style="width: 85px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 85px; text-align: center; white-space: nowrap;">แถวที่</th>
-            <th style="width: 44px; text-align: center; white-space: nowrap;"></th>
+            <th style="padding-left: 8px;">ชื่อผู้เล่น</th>
+            <th style="width: 58px; text-align: center; white-space: nowrap;">หน้าที่</th>
+            <th style="width: 58px; text-align: center; white-space: nowrap;">แถวที่</th>
+            <th style="width: 36px; text-align: center; white-space: nowrap;"></th>
           </tr>
         </thead>
         <tbody>
@@ -911,9 +911,9 @@ function renderWheelTable(result) {
       <table class="cat-table">
         <thead>
           <tr>
-            <th>รายการไอเทม</th>
-            <th style="width: 85px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 85px; text-align: center; white-space: nowrap;">แถวที่</th>
+            <th style="padding-left: 8px;">รายการไอเทม</th>
+            <th style="width: 58px; text-align: center; white-space: nowrap;">หน้าที่</th>
+            <th style="width: 58px; text-align: center; white-space: nowrap;">แถวที่</th>
           </tr>
         </thead>
         <tbody>
