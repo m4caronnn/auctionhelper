@@ -360,20 +360,51 @@ async function generateAndCopyShareLink() {
     return;
   }
   const cleanUrl = window.location.href.split('#')[0];
-  const shareUrl = `${cleanUrl}#s=${encoded}`;
+  const longShareUrl = `${cleanUrl}#s=${encoded}`;
+
+  // Prompt user whether to shorten the link via is.gd
+  const wantShort = confirm('คุณต้องการย่อลิงก์แชร์คิวด้วย is.gd หรือไม่?\n\n- ตกลง (OK): ย่อลิงก์ให้สั้นลงด้วย is.gd\n- ยกเลิก (Cancel): คัดลอกลิงก์แบบยาวดั้งเดิม');
+
+  let finalShareUrl = longShareUrl;
+  let isShortened = false;
+
+  if (wantShort) {
+    showToast('⏳ กำลังย่อลิงก์ด้วย is.gd...');
+    try {
+      const isGdEndpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longShareUrl)}`;
+      const res = await fetch(isGdEndpoint);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.shorturl) {
+          finalShareUrl = json.shorturl;
+          isShortened = true;
+        }
+      }
+    } catch (err) {
+      console.warn('is.gd API fetch error:', err);
+    }
+
+    if (!isShortened) {
+      showToast('⚠️ ไม่สามารถย่อลิงก์ด้วย is.gd ได้ ระบบจะคัดลอกลิงก์ปกติแทน');
+    }
+  }
+
+  const toastMsg = isShortened
+    ? '🔗 คัดลอกลิงก์ย่อ is.gd (View-Only) เรียบร้อยแล้ว!'
+    : '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!';
 
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+    navigator.clipboard.writeText(finalShareUrl).then(() => {
+      showToast(toastMsg);
     }).catch(() => {
-      fallbackCopyText(shareUrl);
+      fallbackCopyText(finalShareUrl, toastMsg);
     });
   } else {
-    fallbackCopyText(shareUrl);
+    fallbackCopyText(finalShareUrl, toastMsg);
   }
 }
 
-function fallbackCopyText(text) {
+function fallbackCopyText(text, successMsg) {
   const input = document.createElement('textarea');
   input.value = text;
   input.style.position = 'fixed';
@@ -394,7 +425,7 @@ function fallbackCopyText(text) {
   document.body.removeChild(input);
 
   if (success) {
-    showToast('🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
+    showToast(successMsg || '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!');
   } else {
     window.prompt('คัดลอกลิงก์แชร์คิวข้างล่างนี้ได้เลยครับ:', text);
   }
