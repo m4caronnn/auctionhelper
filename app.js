@@ -23,6 +23,13 @@ let appData = {
     whiteFeather: [],
     blackFeather: []
   },
+  buyoutDeductions: {
+    album: {},
+    shard: {},
+    whiteFeather: {},
+    blackFeather: {}
+  },
+  buyoutHistory: [],
   searchTerm: ''
 };
 
@@ -57,6 +64,7 @@ const countBadges = {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
   initEventListeners();
   loadStateFromUI();
   calculateAndRender();
@@ -192,11 +200,26 @@ async function encodeShareData() {
       parseNames(listInputs.blackFeather ? listInputs.blackFeather.value : '').join('\x1f')
     ];
 
-    // Ultra-compact binary string structure: "qStr;sStr;lStr"
+    // Ultra-compact binary string structure: "qStr;sStr;lStr;bStr"
     const qStr = (q.join(',') === '1,1,3,5') ? '' : q.join(',');
     const sStr = s.join(',');
     const lStr = l.join('\x1e');
-    const compactText = `${qStr};${sStr};${lStr}`;
+
+    // Build buyout deductions compact string
+    const bArr = [];
+    ITEM_TYPES.forEach(t => {
+      const k = t.key;
+      const deds = appData.buyoutDeductions[k] || {};
+      Object.keys(deds).forEach(pName => {
+        const cnt = deds[pName];
+        if (cnt > 0) {
+          bArr.push(`${k}\x1f${pName}\x1f${cnt}`);
+        }
+      });
+    });
+    const bStr = bArr.join('\x1e');
+
+    const compactText = `${qStr};${sStr};${lStr};${bStr}`;
 
     // Try Native Deflate Compression (Ultra-compact for Thai UTF-8 text)
     if (typeof CompressionStream !== 'undefined') {
@@ -242,11 +265,24 @@ async function decodeShareData(encodedStr) {
       
       const parts = text.split(';');
       if (parts.length >= 3) {
-        const [qStr, sStr, lStr] = parts;
+        const [qStr, sStr, lStr, bStr] = parts;
         const qArr = qStr ? qStr.split(',').map(Number) : [1, 1, 3, 5];
         const sArr = sStr ? sStr.split(',').map(Number) : [0, 0, 0, 0];
         const lCats = lStr ? lStr.split('\x1e') : ['', '', '', ''];
         
+        const buyoutDeductions = { album: {}, shard: {}, whiteFeather: {}, blackFeather: {} };
+        if (bStr) {
+          const bEntries = bStr.split('\x1e');
+          bEntries.forEach(entry => {
+            if (!entry) return;
+            const [k, pName, cntStr] = entry.split('\x1f');
+            if (k && pName && cntStr) {
+              if (!buyoutDeductions[k]) buyoutDeductions[k] = {};
+              buyoutDeductions[k][pName] = parseInt(cntStr) || 0;
+            }
+          });
+        }
+
         return {
           quotas: { album: qArr[0] || 1, shard: qArr[1] || 1, whiteFeather: qArr[2] || 3, blackFeather: qArr[3] || 5 },
           stocks: { album: sArr[0] || 0, shard: sArr[1] || 0, whiteFeather: sArr[2] || 0, blackFeather: sArr[3] || 0 },
@@ -255,7 +291,8 @@ async function decodeShareData(encodedStr) {
             shard: lCats[1] ? lCats[1].split('\x1f').join('\n') : '',
             whiteFeather: lCats[2] ? lCats[2].split('\x1f').join('\n') : '',
             blackFeather: lCats[3] ? lCats[3].split('\x1f').join('\n') : ''
-          }
+          },
+          buyoutDeductions
         };
       }
     } catch (e) {
@@ -395,10 +432,13 @@ async function checkUrlShareMode() {
           if (listInputs[k]) listInputs[k].value = shareData.lists[k];
         });
       }
+      if (shareData.buyoutDeductions) {
+        appData.buyoutDeductions = shareData.buyoutDeductions;
+      }
       loadStateFromUI();
       calculateAndRender();
       setViewOnlyMode(true);
-      showToast('👀 เปิดในโหมด View-Only สำหรับสมาชิก');
+      showToast('👀 เปิดในโหมด View-Only สำหรับสมาชิก (รวมรายการที่โดน Buyout แล้ว)');
     }
   }
 }
@@ -496,9 +536,88 @@ function resetAll() {
   Object.keys(stockInputs).forEach(key => stockInputs[key].value = 0);
   Object.keys(listInputs).forEach(key => listInputs[key].value = '');
 
+  appData.buyoutDeductions = { album: {}, shard: {}, whiteFeather: {}, blackFeather: {} };
+  appData.buyoutHistory = [];
+
   loadStateFromUI();
   calculateAndRender();
+  updateBuyoutHistoryUI();
   showToast('🗑️ ล้างข้อมูลเรียบร้อยแล้ว');
+}
+
+// Buyout Cut Engine Handlers
+function handleBuyoutCut(key, catName, playerName, page, slot) {
+  // 1. Deduct 1 stock
+  if (appData.stocks[key] > 0) {
+    appData.stocks[key] -= 1;
+    if (stockInputs[key]) stockInputs[key].value = appData.stocks[key];
+  }
+
+  // 2. Track buyout deduction for player
+  if (!appData.buyoutDeductions[key]) appData.buyoutDeductions[key] = {};
+  appData.buyoutDeductions[key][playerName] = (appData.buyoutDeductions[key][playerName] || 0) + 1;
+
+  // 3. Add to history stack for undo
+  appData.buyoutHistory.push({
+    key,
+    catName,
+    playerName,
+    page,
+    slot,
+    timestamp: new Date()
+  });
+
+  // 4. Recalculate & update UI
+  updateListCounts();
+  calculateAndRender();
+  updateBuyoutHistoryUI();
+
+  showToast(`🚫 ตัดคิว Buyout: ${playerName} (${catName} หน้า ${page} แถว ${slot}) เรียบร้อย! คิวถัดไปขยับขึ้น 1 แถวอัตโนมัติ`);
+}
+
+function undoLastBuyout() {
+  if (appData.buyoutHistory.length === 0) return;
+
+  const lastCut = appData.buyoutHistory.pop();
+  const { key, catName, playerName, page, slot } = lastCut;
+
+  // 1. Restore stock
+  appData.stocks[key] = (appData.stocks[key] || 0) + 1;
+  if (stockInputs[key]) stockInputs[key].value = appData.stocks[key];
+
+  // 2. Reduce deduction
+  if (appData.buyoutDeductions[key] && appData.buyoutDeductions[key][playerName] > 0) {
+    appData.buyoutDeductions[key][playerName] -= 1;
+  }
+
+  // 3. Recalculate & update UI
+  updateListCounts();
+  calculateAndRender();
+  updateBuyoutHistoryUI();
+
+  showToast(`↩️ เรียกคืนคิวที่โดน Buyout: ${playerName} (${catName} หน้า ${page} แถว ${slot}) คืนสู่ระบบเรียบร้อย`);
+}
+
+function updateBuyoutHistoryUI() {
+  const bar = document.getElementById('buyoutHistoryBar');
+  const tagsContainer = document.getElementById('buyoutHistoryList');
+  const btnUndo = document.getElementById('btnUndoBuyout');
+
+  if (!bar || !tagsContainer) return;
+
+  if (appData.buyoutHistory.length === 0) {
+    bar.classList.add('hidden');
+    tagsContainer.innerHTML = '';
+  } else {
+    bar.classList.remove('hidden');
+    tagsContainer.innerHTML = appData.buyoutHistory.map(h => `
+      <span class="buyout-tag">👤 ${escapeHtml(h.playerName)} (${escapeHtml(h.catName)}: หน้า ${h.page} แถว ${h.slot})</span>
+    `).join('');
+  }
+
+  if (btnUndo) {
+    btnUndo.onclick = undoLastBuyout;
+  }
 }
 
 // Core Engine Calculation
@@ -534,7 +653,7 @@ function calculateEngine() {
 
   ITEM_TYPES.forEach(typeObj => {
     const key = typeObj.key;
-    const maxQuota = QUOTAS[key];
+    const baseQuota = QUOTAS[key];
     const playerList = appData.lists[key] || [];
 
     // Find available item slots of this type
@@ -546,24 +665,19 @@ function calculateEngine() {
         playerAssignmentsMap[playerName] = [];
       }
 
-      // Check if there are enough items left to fulfill a FULL max quota for this player
-      const remainingInStock = availableItemsOfCategory.length - itemPointer;
-      if (remainingInStock >= maxQuota) {
-        for (let q = 0; q < maxQuota; q++) {
+      // Check if player has any Buyout deductions
+      const deduction = (appData.buyoutDeductions[key] && appData.buyoutDeductions[key][playerName]) || 0;
+      const effectiveQuota = Math.max(0, baseQuota - deduction);
+
+      if (effectiveQuota > 0) {
+        const remainingInStock = availableItemsOfCategory.length - itemPointer;
+        const giveCount = Math.min(effectiveQuota, remainingInStock);
+        for (let q = 0; q < giveCount; q++) {
           const itemToGive = availableItemsOfCategory[itemPointer];
           itemToGive.assignedTo = playerName;
           playerAssignmentsMap[playerName].push(itemToGive);
           itemPointer++;
         }
-      } else {
-        // Stock depleted or incomplete quota for this category
-        warnings.push({
-          type: 'shortage',
-          playerName,
-          categoryName: typeObj.name,
-          needed: maxQuota,
-          given: 0
-        });
       }
     });
 
@@ -664,6 +778,9 @@ function renderSideBySideCategoryTables(result) {
               </td>
               <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
               <td><span class="slot-num-badge">แถว ${itemUnit.slot}</span></td>
+              <td>
+                <button class="btn-buyout-cut" data-key="${key}" data-name="${typeObj.name}" data-player="${escapeHtml(pName)}" data-page="${itemUnit.page}" data-slot="${itemUnit.slot}" title="ตัดคิว Buyout 1 ชิ้น (หน้า ${itemUnit.page} แถว ${itemUnit.slot})">🚫</button>
+              </td>
             </tr>
           `;
           rowCounter++;
@@ -689,8 +806,9 @@ function renderSideBySideCategoryTables(result) {
         <thead>
           <tr>
             <th>ชื่อผู้เล่น</th>
-            <th style="width: 78px; text-align: center; white-space: nowrap;">หน้าที่</th>
-            <th style="width: 78px; text-align: center; white-space: nowrap;">แถวที่</th>
+            <th style="width: 60px; text-align: center; white-space: nowrap;">หน้าที่</th>
+            <th style="width: 60px; text-align: center; white-space: nowrap;">แถวที่</th>
+            <th style="width: 44px; text-align: center; white-space: nowrap;"></th>
           </tr>
         </thead>
         <tbody>
@@ -709,6 +827,22 @@ function renderSideBySideCategoryTables(result) {
       const key = btnEl.getAttribute('data-key');
       const name = btnEl.getAttribute('data-name');
       captureCategoryTable(key, name);
+    });
+  });
+
+  // Attach event listeners for buyout cut buttons
+  document.querySelectorAll('.btn-buyout-cut').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const btnEl = e.target.closest('button') || e.currentTarget;
+      const key = btnEl.getAttribute('data-key');
+      const name = btnEl.getAttribute('data-name');
+      const player = btnEl.getAttribute('data-player');
+      const page = btnEl.getAttribute('data-page');
+      const slot = btnEl.getAttribute('data-slot');
+
+      if (confirm('ต้องการลบใช่ไหม')) {
+        handleBuyoutCut(key, name, player, page, slot);
+      }
     });
   });
 
@@ -985,3 +1119,31 @@ function showToast(message) {
 function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+
+// Theme Toggle Implementation
+function initTheme() {
+  const savedTheme = localStorage.getItem('ro_auction_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  const checkbox = document.getElementById('themeToggleCheckbox');
+  if (checkbox) {
+    checkbox.addEventListener('change', (e) => {
+      const newTheme = e.target.checked ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('ro_auction_theme', newTheme);
+      showToast(newTheme === 'light' ? '☀️ สลับเป็นโหมดสว่างเรียบร้อย' : '🌙 สลับเป็นโหมดมืดเรียบร้อย');
+    });
+  }
+}
+
+function applyTheme(theme) {
+  const checkbox = document.getElementById('themeToggleCheckbox');
+  if (theme === 'light') {
+    document.body.classList.add('light-theme');
+    if (checkbox) checkbox.checked = true;
+  } else {
+    document.body.classList.remove('light-theme');
+    if (checkbox) checkbox.checked = false;
+  }
+}
+

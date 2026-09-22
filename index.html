@@ -26,6 +26,14 @@
         </div>
       </div>
       <div class="header-actions">
+        <div class="theme-switch-wrapper" title="สลับธีม สว่าง/มืด">
+          <input type="checkbox" id="themeToggleCheckbox" class="theme-switch-checkbox">
+          <label for="themeToggleCheckbox" class="theme-switch-label">
+            <span class="switch-icon icon-moon">🌙</span>
+            <span class="switch-icon icon-sun">☀️</span>
+            <span class="switch-ball"></span>
+          </label>
+        </div>
         <button id="btnShareLink" class="btn btn-primary"><img src="images/icon-link.svg" class="btn-svg-icon" alt="">คัดลอกลิงก์แชร์คิว</button>
         <button id="btnDemo" class="btn btn-secondary">⚡ โหลดข้อมูลตัวอย่าง</button>
         <button id="btnReset" class="btn btn-danger"><img src="images/icon-trash.svg" class="btn-svg-icon" alt="">ล้างทั้งหมด</button>
@@ -162,6 +170,15 @@
           <h2><img src="images/icon-table.svg" class="header-svg-icon" alt="">ตารางสรุปคิวแยกหมวดไอเทม</h2>
           <div class="search-box">
             <input type="text" id="searchMember" placeholder="🔍 ค้นหาชื่อสมาชิก...">
+          </div>
+        </div>
+
+        <!-- Buyout Cut History Bar -->
+        <div id="buyoutHistoryBar" class="buyout-history-bar hidden">
+          <div class="buyout-bar-content">
+            <span class="buyout-bar-badge">🚫 รายการที่โดน Buyout:</span>
+            <span id="buyoutHistoryList" class="buyout-history-tags"></span>
+            <button id="btnUndoBuyout" class="btn btn-sm btn-secondary">↩️ ยกเลิกตัดคิวล่าสุด (Undo)</button>
           </div>
         </div>
 
