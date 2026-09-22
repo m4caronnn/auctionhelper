@@ -451,12 +451,22 @@ function parseNames(text) {
     .filter(name => name.length > 0);
 }
 
+function getTotalCategoryStock(key) {
+  const stock = appData.stocks[key] || 0;
+  const deds = appData.buyoutDeductions[key] || {};
+  let totalDeductions = 0;
+  Object.keys(deds).forEach(p => {
+    totalDeductions += (deds[p] || 0);
+  });
+  return stock + totalDeductions;
+}
+
 function updateListCounts() {
   loadQuotasFromUI();
   Object.keys(listInputs).forEach(key => {
-    const stock = appData.stocks[key] || 0;
+    const totalStock = getTotalCategoryStock(key);
     const quota = QUOTAS[key];
-    const maxPlayers = Math.floor(stock / quota);
+    const maxPlayers = Math.floor(totalStock / quota);
 
     let names = parseNames(listInputs[key].value);
 
@@ -467,10 +477,23 @@ function updateListCounts() {
       footerEl.textContent = `คนละ ${quota} ${unitStr} (จำกัดสูงสุดตามสต็อก)`;
     }
 
+    // Strictly limit allowed player names to maxPlayers based on total stock (including buyouts) and quota
+    if (totalStock > 0 && names.length > maxPlayers) {
+      names = names.slice(0, maxPlayers);
+      listInputs[key].value = names.join('\n');
+      const catObj = ITEM_TYPES.find(t => t.key === key);
+      showToast(`⚠️ ${catObj.name}: ปรับโควต้าเป็น ${quota} ${unitStr}/คน ล็อคได้สูงสุด ${maxPlayers} คน`);
+    } else if (totalStock === 0 && names.length > 0) {
+      names = [];
+      listInputs[key].value = '';
+      const catObj = ITEM_TYPES.find(t => t.key === key);
+      showToast(`⚠️ กรุณากำหนดจำนวนสต็อก ${catObj.name} ก่อนใส่รายชื่อครับ`);
+    }
+
     if (maxPlayers > 0) {
       countBadges[key].textContent = `${names.length}/${maxPlayers} คน`;
     } else {
-      countBadges[key].textContent = `${names.length} คน`;
+      countBadges[key].textContent = `0 คน`;
     }
 
     appData.lists[key] = names;
