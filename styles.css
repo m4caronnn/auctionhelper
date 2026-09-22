@@ -1296,7 +1296,13 @@ body.light-theme .buyout-tag {
 }
 
 body.view-only-mode .btn-buyout-cut,
-body.view-only-mode .buyout-history-bar {
+body.view-only-mode .buyout-history-bar,
+body.view-only-mode .btn-cap,
+body.view-only-mode .btn-cap-single,
+body.view-only-mode .btn-cap-wheel-inner,
+body.view-only-mode .cat-header-actions,
+body.view-only-mode .cat-table th:nth-child(4),
+body.view-only-mode .cat-table td:nth-child(4) {
   display: none !important;
 }
 

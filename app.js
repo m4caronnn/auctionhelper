@@ -852,9 +852,7 @@ function renderSideBySideCategoryTables(result) {
       const page = btnEl.getAttribute('data-page');
       const slot = btnEl.getAttribute('data-slot');
 
-      if (confirm('ต้องการลบใช่ไหม')) {
-        handleBuyoutCut(key, name, player, page, slot);
-      }
+      handleBuyoutCut(key, name, player, page, slot);
     });
   });
 
