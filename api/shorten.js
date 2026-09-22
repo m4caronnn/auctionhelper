@@ -35,8 +35,8 @@ export default async function handler(req, res) {
       shortId += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
-    const kvUrl = process.env.KV_REST_API_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN;
+    const kvUrl = process.env.KV_REST_API_URL || process.env.STORAGE_REST_API_URL || process.env.STORAGE_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN || process.env.STORAGE_REST_API_TOKEN || process.env.STORAGE_TOKEN || process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
     if (!kvUrl || !kvToken) {
       return res.status(500).json({ error: 'Vercel KV Database environment variables not configured' });
