@@ -989,6 +989,14 @@ async function captureTableElement(tableBox, baseFileName) {
     const actions = cloneBox.querySelector('.cat-header-actions');
     if (actions) actions.remove();
 
+    // Remove buyout cut buttons and 4th column from screenshot clone
+    cloneBox.querySelectorAll('.btn-buyout-cut').forEach(btn => btn.remove());
+    cloneBox.querySelectorAll('tr').forEach(tr => {
+      if (tr.children.length >= 4) {
+        tr.children[3].remove();
+      }
+    });
+
     if (totalParts > 1) {
       const titleDiv = cloneBox.querySelector('.cat-header-title');
       if (titleDiv) {

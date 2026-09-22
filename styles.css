@@ -936,13 +936,6 @@ body.view-only-mode .theme-switch-wrapper {
   margin-right: 4px;
 }
 
-/* High Contrast & Drop Shadow Styling for All Item SVG Icons */
-body.light-theme .stock-item.white-feather .stock-icon {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 2px 8px rgba(15, 43, 60, 0.08);
-}
-
 /* Enhanced Drop Shadows for All Item Icons */
 .feather-svg-icon,
 .feather-svg-icon-sm,
@@ -1176,26 +1169,27 @@ body.light-theme .slot-num-badge {
 
 /* MAKE Style Buttons */
 body.light-theme .btn-primary {
-  background: #00d696;
-  color: #0f2b3c;
-  font-weight: 700;
-  border: none;
+  background: #e6f7f3;
+  color: #00875a;
+  border: 1px solid rgba(0, 214, 150, 0.4);
+  font-weight: 600;
 }
 
 body.light-theme .btn-primary:hover {
-  background: #00b882;
+  background: #d0f2ea;
+  border-color: #00d696;
 }
 
 body.light-theme .btn-secondary {
-  background: #e6f7f3;
-  color: #00875a;
-  border: 1px solid rgba(0, 214, 150, 0.3);
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
   font-weight: 600;
 }
 
 body.light-theme .btn-secondary:hover {
-  background: #d0f2ea;
-  border-color: #00d696;
+  background: #e2e8f0;
+  border-color: #94a3b8;
 }
 
 body.light-theme .btn-danger {
@@ -1219,13 +1213,10 @@ body.light-theme .btn-cap:hover {
   border-color: #00d696;
 }
 
+body.light-theme .btn-primary img,
 body.light-theme .btn-cap img,
 body.light-theme .header-svg-icon {
   filter: invert(0.15) sepia(0.8) saturate(5) hue-rotate(120deg);
-}
-
-body.light-theme .btn-primary img {
-  filter: none;
 }
 
 body.light-theme .view-only-banner {
