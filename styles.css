@@ -668,7 +668,7 @@ body {
 .cat-table th:nth-child(3),
 .cat-table td:nth-child(3) {
   text-align: center;
-  width: 76px;
+  width: 85px;
 }
 
 .cat-table th:nth-child(4),
@@ -1304,6 +1304,11 @@ body.view-only-mode .cat-header-actions,
 body.view-only-mode .cat-table th:nth-child(4),
 body.view-only-mode .cat-table td:nth-child(4) {
   display: none !important;
+}
+
+body.view-only-mode .cat-table th:nth-child(3),
+body.view-only-mode .cat-table td:nth-child(3) {
+  padding-right: 14px !important;
 }
 
 
