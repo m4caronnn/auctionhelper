@@ -1,6 +1,7 @@
 // Vercel Serverless Function: POST /api/shorten
+import Redis from 'ioredis';
+
 export default async function handler(req, res) {
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -24,78 +25,41 @@ export default async function handler(req, res) {
     }
 
     const data = body && body.data;
-    let longUrl = body && body.longUrl;
-
-    // Determine domain & target URL to shorten
-    const referer = (req.headers.referer || req.headers.origin || 'https://auctionhelper.vercel.app').split('#')[0].replace(/\/+$/, '');
-    if (!longUrl && data) {
-      longUrl = `${referer}#s=${data}`;
+    if (!data) {
+      return res.status(400).json({ error: 'Missing data payload' });
     }
 
-    if (!longUrl && !data) {
-      return res.status(400).json({ error: 'Missing payload' });
+    // Read Redis URL from environment variables
+    const redisUrl = process.env.REDIS_URL 
+      || process.env.STORAGE_URL 
+      || process.env.KV_URL 
+      || process.env.KV_REST_API_URL;
+
+    if (!redisUrl) {
+      return res.status(500).json({ error: 'REDIS_URL environment variable is missing on Vercel' });
     }
 
-    // 1. Try Vercel KV / Upstash REST API if configured
-    let rawUrl = process.env.KV_REST_API_URL 
-      || process.env.STORAGE_REST_API_URL 
-      || process.env.UPSTASH_REDIS_REST_URL 
-      || process.env.REDIS_REST_API_URL;
-
-    let token = process.env.KV_REST_API_TOKEN 
-      || process.env.STORAGE_REST_API_TOKEN 
-      || process.env.UPSTASH_REDIS_REST_TOKEN 
-      || process.env.REDIS_REST_API_TOKEN;
-
-    if (rawUrl && token && data) {
-      let restUrl = rawUrl.trim();
-      if (!restUrl.startsWith('http://') && !restUrl.startsWith('https://')) {
-        restUrl = `https://${restUrl}`;
-      }
-      restUrl = restUrl.replace(/\/+$/, '');
-
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let shortId = '';
-      for (let i = 0; i < 6; i++) {
-        shortId += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      try {
-        let kvRes = await fetch(restUrl, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(['SET', `share:${shortId}`, data, 'EX', 7776000])
-        });
-
-        if (kvRes.ok) {
-          return res.status(200).json({ shortId, shortUrl: `${referer}/s/${shortId}` });
-        }
-      } catch (e) {
-        console.warn('Vercel KV REST write failed, fallback to TinyURL:', e);
-      }
+    // Generate 6-character random alphanumeric ID
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let shortId = '';
+    for (let i = 0; i < 6; i++) {
+      shortId += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
-    // 2. Server-Side Fail-Safe: Call TinyURL API from Node.js server (No CORS restrictions!)
-    if (longUrl) {
-      try {
-        const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-        if (tinyRes.ok) {
-          const shortUrlText = await tinyRes.text();
-          if (shortUrlText && shortUrlText.startsWith('http')) {
-            return res.status(200).json({ shortUrl: shortUrlText.trim() });
-          }
-        }
-      } catch (e) {
-        console.warn('TinyURL server fetch error:', e);
-      }
-    }
+    // Connect to Redis Cloud using ioredis TCP socket
+    const redis = new Redis(redisUrl, {
+      maxRetriesPerRequest: 2,
+      connectTimeout: 5000,
+      tls: redisUrl.startsWith('rediss://') ? {} : undefined
+    });
 
-    return res.status(500).json({ error: 'Could not shorten URL' });
+    // Save key in Redis with 90-day TTL (7,776,000 seconds)
+    await redis.set(`share:${shortId}`, data, 'EX', 7776000);
+    await redis.quit();
+
+    return res.status(200).json({ shortId });
   } catch (err) {
-    console.error('Shorten handler error:', err);
-    return res.status(500).json({ error: err.message || 'Internal Server Error' });
+    console.error('Redis shorten error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to write to Redis database' });
   }
 }

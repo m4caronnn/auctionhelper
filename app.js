@@ -360,49 +360,29 @@ async function generateAndCopyShareLink() {
     return;
   }
   const cleanUrl = window.location.href.split('#')[0].replace(/\/+$/, '');
-  const longShareUrl = `${cleanUrl}#s=${encoded}`;
-  let shareUrl = longShareUrl;
+  let shareUrl = `${cleanUrl}#s=${encoded}`;
   let isShortened = false;
 
-  // 1. Attempt Vercel KV Shortener API
+  // Call Vercel Redis Serverless Shortener API
   try {
     const res = await fetch('/api/shorten', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: encoded, longUrl: longShareUrl })
+      body: JSON.stringify({ data: encoded })
     });
     if (res.ok) {
       const json = await res.json();
-      if (json && json.shortUrl) {
-        shareUrl = json.shortUrl;
-        isShortened = true;
-      } else if (json && json.shortId) {
+      if (json && json.shortId) {
         shareUrl = `${cleanUrl}/s/${json.shortId}`;
         isShortened = true;
       }
     }
   } catch (e) {
-    console.warn('Vercel API error:', e);
-  }
-
-  // 2. Fallback to TinyURL API from client-side if Vercel API didn't shorten
-  if (!isShortened) {
-    try {
-      const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longShareUrl)}`);
-      if (tinyRes.ok) {
-        const shortText = await tinyRes.text();
-        if (shortText && shortText.startsWith('http')) {
-          shareUrl = shortText.trim();
-          isShortened = true;
-        }
-      }
-    } catch (e) {
-      console.warn('TinyURL client fallback error:', e);
-    }
+    console.warn('Vercel Redis API error:', e);
   }
 
   const msg = isShortened
-    ? '🔗 คัดลอกลิงก์ย่อ (View-Only) เรียบร้อยแล้ว!'
+    ? '🔗 คัดลอกลิงก์ย่อ Vercel (View-Only) เรียบร้อยแล้ว!'
     : '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!';
 
   if (navigator.clipboard && window.isSecureContext) {
