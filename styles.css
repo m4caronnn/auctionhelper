@@ -907,19 +907,43 @@ body.view-only-mode .theme-switch-wrapper {
   margin-right: 4px;
 }
 
-/* White Feather High Contrast Styling */
+/* High Contrast & Drop Shadow Styling for All Item SVG Icons */
 .stock-item.white-feather .stock-icon {
   background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 body.light-theme .stock-item.white-feather .stock-icon {
-  background: #1e293b !important;
-  border: 1px solid rgba(0, 214, 150, 0.3) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(15, 43, 60, 0.08);
+}
+
+/* Enhanced Drop Shadows for All Item Icons */
+.feather-svg-icon,
+.feather-svg-icon-sm,
+.feather-svg-icon-tbl,
+.stock-icon img,
+.player-icon-prefix img,
+.cat-header-title img {
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.45));
 }
 
 img[src*="white-feather"] {
-  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.55)) drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+body.light-theme img[src*="white-feather"] {
+  filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6)) drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+body.light-theme .feather-svg-icon,
+body.light-theme .feather-svg-icon-sm,
+body.light-theme .feather-svg-icon-tbl,
+body.light-theme .stock-icon img,
+body.light-theme .player-icon-prefix img,
+body.light-theme .cat-header-title img {
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.4));
 }
 
 /* Player Icon Prefix Styles */
