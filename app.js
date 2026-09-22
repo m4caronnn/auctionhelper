@@ -467,23 +467,10 @@ function updateListCounts() {
       footerEl.textContent = `คนละ ${quota} ${unitStr} (จำกัดสูงสุดตามสต็อก)`;
     }
 
-    // Strictly limit allowed player names to maxPlayers based on stock and quota
-    if (stock > 0 && names.length > maxPlayers) {
-      names = names.slice(0, maxPlayers);
-      listInputs[key].value = names.join('\n');
-      const catObj = ITEM_TYPES.find(t => t.key === key);
-      showToast(`⚠️ ${catObj.name}: ปรับโควต้าเป็น ${quota} ${unitStr}/คน ล็อคได้สูงสุด ${maxPlayers} คน`);
-    } else if (stock === 0 && names.length > 0) {
-      names = [];
-      listInputs[key].value = '';
-      const catObj = ITEM_TYPES.find(t => t.key === key);
-      showToast(`⚠️ กรุณากำหนดจำนวนสต็อก ${catObj.name} ก่อนใส่รายชื่อครับ`);
-    }
-
     if (maxPlayers > 0) {
       countBadges[key].textContent = `${names.length}/${maxPlayers} คน`;
     } else {
-      countBadges[key].textContent = `0 คน`;
+      countBadges[key].textContent = `${names.length} คน`;
     }
 
     appData.lists[key] = names;
