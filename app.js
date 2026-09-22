@@ -989,14 +989,6 @@ async function captureTableElement(tableBox, baseFileName) {
     const actions = cloneBox.querySelector('.cat-header-actions');
     if (actions) actions.remove();
 
-    // Remove buyout cut buttons and 4th column from screenshot clone
-    cloneBox.querySelectorAll('.btn-buyout-cut').forEach(btn => btn.remove());
-    cloneBox.querySelectorAll('tr').forEach(tr => {
-      if (tr.children.length >= 4) {
-        tr.children[3].remove();
-      }
-    });
-
     if (totalParts > 1) {
       const titleDiv = cloneBox.querySelector('.cat-header-title');
       if (titleDiv) {
@@ -1011,8 +1003,22 @@ async function captureTableElement(tableBox, baseFileName) {
     const cloneTbody = cloneBox.querySelector('tbody');
     if (cloneTbody) {
       cloneTbody.innerHTML = '';
-      chunkRows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
+      chunkRows.forEach(r => {
+        const rowClone = r.cloneNode(true);
+        if (rowClone.children.length >= 4) {
+          rowClone.children[3].remove();
+        }
+        cloneTbody.appendChild(rowClone);
+      });
     }
+
+    // Remove buyout cut buttons and 4th column from header in cloneBox
+    cloneBox.querySelectorAll('.btn-buyout-cut').forEach(btn => btn.remove());
+    cloneBox.querySelectorAll('thead tr').forEach(tr => {
+      if (tr.children.length >= 4) {
+        tr.children[3].remove();
+      }
+    });
 
     // Reset height constraints on cloneBox so canvas fits exact content size
     cloneBox.style.width = '100%';
