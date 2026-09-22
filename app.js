@@ -789,7 +789,7 @@ function renderSideBySideCategoryTables(result) {
               <td><span class="page-num-badge">หน้า ${itemUnit.page}</span></td>
               <td><span class="slot-num-badge">แถว ${itemUnit.slot}</span></td>
               <td>
-                <button class="btn-buyout-cut" data-key="${key}" data-name="${typeObj.name}" data-player="${escapeHtml(pName)}" data-page="${itemUnit.page}" data-slot="${itemUnit.slot}" title="ตัดคิว Buyout 1 ชิ้น (หน้า ${itemUnit.page} แถว ${itemUnit.slot})">🚫</button>
+                <button class="btn-buyout-cut" data-key="${key}" data-name="${typeObj.name}" data-player="${escapeHtml(pName)}" data-page="${itemUnit.page}" data-slot="${itemUnit.slot}" title="ตัดคิว Buyout 1 ชิ้น (หน้า ${itemUnit.page} แถว ${itemUnit.slot})"><img src="images/icon-buyout.svg" class="btn-buyout-icon" alt="🚫"></button>
               </td>
             </tr>
           `;

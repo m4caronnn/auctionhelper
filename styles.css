@@ -433,6 +433,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.input-group:hover,
+.input-group:focus-within {
+  border-color: var(--accent-blurple);
+  box-shadow: 0 4px 20px rgba(88, 101, 242, 0.2);
+  transform: translateY(-2px);
+  background: #313338;
 }
 
 .input-header {
@@ -469,11 +478,16 @@ body {
   resize: vertical;
   outline: none;
   min-height: 120px;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-group textarea:hover {
+  border-color: rgba(88, 101, 242, 0.6);
 }
 
 .input-group textarea:focus {
   border-color: var(--accent-blurple);
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
 }
 
 .input-footer {
@@ -664,26 +678,41 @@ body {
 }
 
 .btn-buyout-cut {
-  background: rgba(237, 66, 69, 0.12);
-  color: #ed4245;
-  border: 1px solid rgba(237, 66, 69, 0.35);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 0.82rem;
-  font-weight: 700;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  padding: 3px 5px;
+  margin: 0 auto;
+  border-radius: 6px;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  outline: none;
+  vertical-align: middle;
 }
 
 .btn-buyout-cut:hover {
-  background: rgba(237, 66, 69, 0.3);
-  border-color: #ed4245;
+  background: rgba(239, 68, 68, 0.28) !important;
+  border-color: #ef4444 !important;
   transform: scale(1.1);
+}
+
+.btn-buyout-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
+body.light-theme .btn-buyout-cut {
+  background: #fef2f2 !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+body.light-theme .btn-buyout-cut:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
 }
 
 /* Deep Dark Mode Row Alternating Colors Between Players */
@@ -908,11 +937,6 @@ body.view-only-mode .theme-switch-wrapper {
 }
 
 /* High Contrast & Drop Shadow Styling for All Item SVG Icons */
-.stock-item.white-feather .stock-icon {
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
 body.light-theme .stock-item.white-feather .stock-icon {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
@@ -1018,11 +1042,31 @@ body.light-theme .cat-table th {
   color: #64748b !important;
 }
 
-body.light-theme .stock-item,
+body.light-theme .stock-item {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+body.light-theme .stock-item:hover {
+  border-color: #00d696 !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(0, 214, 150, 0.16) !important;
+  transform: translateY(-2px);
+}
+
 body.light-theme .input-group {
   background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.light-theme .input-group:focus-within,
+body.light-theme .input-group:hover {
+  border-color: #00d696 !important;
+  box-shadow: 0 4px 18px rgba(0, 214, 150, 0.12) !important;
 }
 
 body.light-theme .stock-info label {
