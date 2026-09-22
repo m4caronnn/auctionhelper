@@ -1020,6 +1020,15 @@ async function captureTableElement(tableBox, baseFileName) {
       }
     });
 
+    // Ensure 3-column screenshot clone has ample column width & right padding so badges never clip
+    cloneBox.querySelectorAll('th:nth-child(2), td:nth-child(2)').forEach(cell => {
+      cell.style.width = '76px';
+    });
+    cloneBox.querySelectorAll('th:nth-child(3), td:nth-child(3)').forEach(cell => {
+      cell.style.width = '84px';
+      cell.style.paddingRight = '16px';
+    });
+
     // Reset height constraints on cloneBox so canvas fits exact content size
     cloneBox.style.width = '100%';
     cloneBox.style.height = 'auto';
