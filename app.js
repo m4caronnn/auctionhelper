@@ -360,47 +360,18 @@ async function generateAndCopyShareLink() {
     return;
   }
   const cleanUrl = window.location.href.split('#')[0];
-  const longShareUrl = `${cleanUrl}#s=${encoded}`;
+  const shareUrl = `${cleanUrl}#s=${encoded}`;
 
-  // Prompt user whether to shorten the link via is.gd
-  const wantShort = confirm('คุณต้องการย่อลิงก์แชร์คิวด้วย is.gd หรือไม่?\n\n- ตกลง (OK): ย่อลิงก์ให้สั้นลงด้วย is.gd\n- ยกเลิก (Cancel): คัดลอกลิงก์แบบยาวดั้งเดิม');
-
-  let finalShareUrl = longShareUrl;
-  let isShortened = false;
-
-  if (wantShort) {
-    showToast('⏳ กำลังย่อลิงก์ด้วย is.gd...');
-    try {
-      const isGdEndpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longShareUrl)}`;
-      const res = await fetch(isGdEndpoint);
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.shorturl) {
-          finalShareUrl = json.shorturl;
-          isShortened = true;
-        }
-      }
-    } catch (err) {
-      console.warn('is.gd API fetch error:', err);
-    }
-
-    if (!isShortened) {
-      showToast('⚠️ ไม่สามารถย่อลิงก์ด้วย is.gd ได้ ระบบจะคัดลอกลิงก์ปกติแทน');
-    }
-  }
-
-  const toastMsg = isShortened
-    ? '🔗 คัดลอกลิงก์ย่อ is.gd (View-Only) เรียบร้อยแล้ว!'
-    : '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!';
+  const toastMsg = '🔗 คัดลอกลิงก์สำหรับแชร์ (View-Only) เรียบร้อยแล้ว!';
 
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(finalShareUrl).then(() => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
       showToast(toastMsg);
     }).catch(() => {
-      fallbackCopyText(finalShareUrl, toastMsg);
+      fallbackCopyText(shareUrl, toastMsg);
     });
   } else {
-    fallbackCopyText(finalShareUrl, toastMsg);
+    fallbackCopyText(shareUrl, toastMsg);
   }
 }
 
